@@ -15,17 +15,19 @@ from models import (db, User, Genre, Manga, Comment, UserLibrary, HeroBlock,
 
 
 # ============ КОНФИГ ============
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))   # ⭐ FIX: было __name__
+
 UPLOAD_FOLDER = os.path.join('static', 'img')
 COVERS_FOLDER = os.path.join('static', 'img', 'covers')
 AVATARS_FOLDER = os.path.join('static', 'img', 'avatars')
 BANNERS_FOLDER = os.path.join('static', 'img', 'banners')
 TEAMS_LOGOS_FOLDER = os.path.join('static', 'img', 'teams', 'logos')
 TEAMS_BANNERS_FOLDER = os.path.join('static', 'img', 'teams', 'banners')
-CHAPTERS_FOLDER = os.path.join('static', 'img', 'chapters')   # ⭐ NEW
+CHAPTERS_FOLDER = os.path.join('static', 'img', 'chapters')
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp', 'gif'}
-MAX_FILE_SIZE = 5 * 1024 * 1024                  # 5 MB — для обычных картинок
-MAX_CHAPTER_UPLOAD = 300 * 1024 * 1024           # 300 MB — для загрузки главы
+MAX_FILE_SIZE = 5 * 1024 * 1024
+MAX_CHAPTER_UPLOAD = 300 * 1024 * 1024
 
 
 def allowed_file(filename):
@@ -59,7 +61,6 @@ def create_notification(user_id, notif_type, content):
 
 
 def user_in_team(user, team):
-    """Состоит ли пользователь в команде (владелец или участник)."""
     if not user or not user.is_authenticated:
         return False
     if team.owner_id == user.id:
@@ -68,11 +69,21 @@ def user_in_team(user, team):
 
 
 def recalc_chapters_count(manga):
-    """Обновляет manga.chapters_count = число уникальных номеров глав."""
     cnt = db.session.query(func.count(func.distinct(Chapter.number))).filter(
         Chapter.manga_id == manga.id
     ).scalar() or 0
     manga.chapters_count = cnt
+
+
+def get_database_uri():
+    """⭐ Поддержка PostgreSQL (Render) и SQLite (локально)."""
+    db_url = os.environ.get('DATABASE_URL')
+    if db_url:
+        # Render даёт URL вида postgres://, а SQLAlchemy ждёт postgresql://
+        if db_url.startswith('postgres://'):
+            db_url = db_url.replace('postgres://', 'postgresql://', 1)
+        return db_url
+    return f"sqlite:///{os.path.join(BASE_DIR, 'app.db')}"
 
 
 def auto_update_database(app):
@@ -104,13 +115,17 @@ def auto_update_database(app):
 def create_app():
     app = Flask(__name__)
 
-    app.config['SECRET_KEY'] = 'dev-secret-key-change-it'
-    # ⭐ Поднимаем лимит для загрузки глав
+    # ⭐ SECRET_KEY из переменной окружения (для продакшена)
+    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-it')
     app.config['MAX_CONTENT_LENGTH'] = MAX_CHAPTER_UPLOAD
 
-    base_dir = os.path.abspath(os.path.dirname(__name__))
-    app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{os.path.join(base_dir, 'app.db')}"
+    # ⭐ URI БД: PostgreSQL на Render или SQLite локально
+    app.config['SQLALCHEMY_DATABASE_URI'] = get_database_uri()
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+        'pool_pre_ping': True,   # ⭐ переподключение при разрыве соединения
+        'pool_recycle': 300,
+    }
 
     for folder in [UPLOAD_FOLDER, COVERS_FOLDER, AVATARS_FOLDER, BANNERS_FOLDER,
                    TEAMS_LOGOS_FOLDER, TEAMS_BANNERS_FOLDER, CHAPTERS_FOLDER]:
@@ -140,10 +155,14 @@ def create_app():
                 default_block = HeroBlock(
                     position=i,
                     image_filename=f'block{i}.{ext}',
-                    manga_id=i
+                    manga_id=i if Manga.query.get(i) else None   # ⭐ FIX: не падать, если манги нет
                 )
                 db.session.add(default_block)
-            db.session.commit()
+            try:
+                db.session.commit()
+            except Exception as e:
+                db.session.rollback()
+                print(f'⚠️ Не удалось создать hero-блоки: {e}')
             hero_blocks = HeroBlock.query.order_by(HeroBlock.position).all()
 
         stats = {
@@ -218,8 +237,8 @@ def create_app():
         manga_query = Manga.query
         if search_query:
             manga_query = manga_query.filter(
-                Manga.title.like(f"%{search_query}%") |
-                Manga.original_title.like(f"%{search_query}%")
+                Manga.title.ilike(f"%{search_query}%") |   # ⭐ ilike для регистронезависимости
+                Manga.original_title.ilike(f"%{search_query}%")
             )
         if selected_genre:
             manga_query = manga_query.filter(Manga.genres.any(id=selected_genre))
@@ -243,11 +262,9 @@ def create_app():
 
         comments = Comment.query.filter_by(manga_id=manga_id).order_by(Comment.created_at.desc()).all()
 
-        # ⭐ Главы (сортировка: том → номер по убыванию)
         chapters = Chapter.query.filter_by(manga_id=manga_id) \
             .order_by(Chapter.volume.desc(), Chapter.number.desc()).all()
 
-        # ⭐ Команды, от лица которых текущий пользователь может загружать главу
         user_teams_for_upload = []
         if current_user.is_authenticated:
             owned = TranslationTeam.query.filter_by(owner_id=current_user.id).all()
@@ -259,7 +276,6 @@ def create_app():
                 if t.id not in seen:
                     seen.add(t.id)
                     all_user_teams.append(t)
-            # Оставляем только те, где манга есть в проектах
             user_teams_for_upload = [t for t in all_user_teams if manga in t.projects]
 
         return render_template('manga.html',
@@ -308,8 +324,6 @@ def create_app():
     # ==================================================
     # ⭐⭐⭐ ГЛАВЫ И ФРЕЙМЫ ⭐⭐⭐
     # ==================================================
-
-    # ---------- ДОБАВЛЕНИЕ ГЛАВЫ ----------
     @app.route('/teams/<slug>/manga/<int:manga_id>/chapters/add',
                methods=['GET', 'POST'])
     @login_required
@@ -317,7 +331,6 @@ def create_app():
         team = TranslationTeam.query.filter_by(slug=slug).first_or_404()
         manga = Manga.query.get_or_404(manga_id)
 
-        # Права: участник команды + манга в проектах команды
         if not user_in_team(current_user, team) and current_user.role != 'ADMIN':
             flash('Только участники команды могут загружать главы', 'error')
             return redirect(url_for('manga_detail', manga_id=manga_id))
@@ -345,7 +358,6 @@ def create_app():
 
             title = (request.form.get('title') or '').strip() or None
 
-            # Уникальность главы
             exists = Chapter.query.filter_by(
                 manga_id=manga.id, team_id=team.id, number=number
             ).first()
@@ -359,7 +371,6 @@ def create_app():
                 flash('Загрузите хотя бы один фрейм (изображение)', 'error')
                 return redirect(request.url)
 
-            # Создаём главу
             chapter = Chapter(
                 manga_id=manga.id,
                 team_id=team.id,
@@ -369,9 +380,8 @@ def create_app():
                 title=title
             )
             db.session.add(chapter)
-            db.session.flush()  # получим chapter.id
+            db.session.flush()
 
-            # Каталог для фреймов
             rel_dir = f'chapters/{manga.id}/{team.id}/{chapter.id}'
             abs_dir = os.path.join('static', 'img', rel_dir)
             os.makedirs(abs_dir, exist_ok=True)
@@ -387,7 +397,7 @@ def create_app():
 
                 frame = ChapterFrame(
                     chapter_id=chapter.id,
-                    image_path=f'img/{rel_dir}/{unique_name}',  # путь относительно /static/
+                    image_path=f'img/{rel_dir}/{unique_name}',
                     order=idx
                 )
                 db.session.add(frame)
@@ -398,7 +408,6 @@ def create_app():
                 flash('Не удалось сохранить ни одного фрейма (проверьте формат файлов)', 'error')
                 return redirect(request.url)
 
-            # Обновляем счётчик глав в манге
             recalc_chapters_count(manga)
             if volume > (manga.volumes_count or 0):
                 manga.volumes_count = volume
@@ -409,7 +418,6 @@ def create_app():
 
         return render_template('chapter_add.html', team=team, manga=manga)
 
-    # ---------- ЧТЕНИЕ ГЛАВЫ ----------
     @app.route('/manga/<int:manga_id>/chapter/<int:chapter_id>')
     def chapter_read(manga_id, chapter_id):
         chapter = Chapter.query.get_or_404(chapter_id)
@@ -419,7 +427,6 @@ def create_app():
         chapter.views = (chapter.views or 0) + 1
         db.session.commit()
 
-        # Соседние главы той же команды
         prev_ch = Chapter.query.filter(
             Chapter.manga_id == manga_id,
             Chapter.team_id == chapter.team_id,
@@ -438,7 +445,6 @@ def create_app():
                                prev_ch=prev_ch,
                                next_ch=next_ch)
 
-    # ---------- УДАЛЕНИЕ ГЛАВЫ ----------
     @app.route('/chapter/<int:chapter_id>/delete', methods=['POST'])
     @login_required
     def chapter_delete(chapter_id):
@@ -457,7 +463,6 @@ def create_app():
         manga_id = chapter.manga_id
 
         try:
-            # Удаляем файлы
             for frame in chapter.frames:
                 abs_path = os.path.join('static', frame.image_path)
                 if os.path.exists(abs_path):
@@ -466,14 +471,12 @@ def create_app():
                     except OSError as e:
                         print(f'Не удалось удалить файл {abs_path}: {e}')
 
-            # Папка главы
             chapter_dir = os.path.join('static', 'img', 'chapters',
                                        str(chapter.manga_id),
                                        str(chapter.team_id),
                                        str(chapter.id))
             if os.path.isdir(chapter_dir):
                 try:
-                    # Удаляем оставшиеся файлы и саму папку
                     for fn in os.listdir(chapter_dir):
                         try:
                             os.remove(os.path.join(chapter_dir, fn))
@@ -485,10 +488,8 @@ def create_app():
 
             db.session.delete(chapter)
             db.session.flush()
-
             recalc_chapters_count(manga)
             db.session.commit()
-
             flash('Глава удалена', 'success')
         except Exception as e:
             db.session.rollback()
@@ -497,7 +498,6 @@ def create_app():
 
         return redirect(url_for('manga_detail', manga_id=manga_id))
 
-    # ---------- РЕДАКТИРОВАНИЕ МЕТАДАННЫХ ГЛАВЫ ----------
     @app.route('/chapter/<int:chapter_id>/edit', methods=['POST'])
     @login_required
     def chapter_edit(chapter_id):
@@ -523,7 +523,6 @@ def create_app():
             num = request.form.get('number')
             if num:
                 new_number = float(num.replace(',', '.'))
-                # проверяем уникальность
                 clash = Chapter.query.filter(
                     Chapter.id != chapter.id,
                     Chapter.manga_id == chapter.manga_id,
@@ -787,7 +786,6 @@ def create_app():
         try:
             title = manga.title
 
-            # ⭐ Удаляем все фреймы всех глав этой манги с диска
             for chapter in list(manga.chapters):
                 for frame in chapter.frames:
                     abs_path = os.path.join('static', frame.image_path)
@@ -797,7 +795,6 @@ def create_app():
                         except OSError:
                             pass
 
-            # Удаляем папку chapters/<manga_id>
             manga_chapters_dir = os.path.join('static', 'img', 'chapters', str(manga.id))
             if os.path.isdir(manga_chapters_dir):
                 try:
@@ -1415,8 +1412,8 @@ def create_app():
         mangas_query = Manga.query
         if search_query:
             mangas_query = mangas_query.filter(
-                Manga.title.like(f"%{search_query}%") |
-                Manga.original_title.like(f"%{search_query}%")
+                Manga.title.ilike(f"%{search_query}%") |
+                Manga.original_title.ilike(f"%{search_query}%")
             )
 
         team_project_ids = [m.id for m in team.projects]
@@ -1673,6 +1670,12 @@ def create_app():
     return app
 
 
+# ⭐ Создаём глобальный app для gunicorn (Render)
+app = create_app()
+
+
 if __name__ == '__main__':
-    app = create_app()
-    app.run(debug=True, port=5000)
+    # ⭐ Локальный запуск
+    port = int(os.environ.get('PORT', 5000))
+    debug_mode = os.environ.get('FLASK_DEBUG', '1') == '1'
+    app.run(host='0.0.0.0', port=port, debug=debug_mode)
