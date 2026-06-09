@@ -11,8 +11,9 @@ env/
 # База данных
 app.db
 *.sqlite
+*.sqlite3
 
-# Только пользовательский контент!
+# Только пользовательский контент (загружается через сайт)
 static/img/chapters/
 static/img/avatars/
 static/img/banners/
