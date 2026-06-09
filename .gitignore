@@ -11,11 +11,11 @@ env/
 # База данных
 app.db
 *.sqlite
-*.sqlite3
 
-# Загруженные пользователями файлы
-static/img/uploads/
+# Только пользовательский контент!
 static/img/chapters/
+static/img/avatars/
+static/img/banners/
 
 # IDE
 .vscode/
