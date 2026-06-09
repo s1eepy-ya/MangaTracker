@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Виртуальное окружение
+.venv/
+venv/
+env/
+
+# База данных
+app.db
+*.sqlite
+*.sqlite3
+
+# Загруженные пользователями файлы
+static/img/uploads/
+static/img/chapters/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Секреты
+.env

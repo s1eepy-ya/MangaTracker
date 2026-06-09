@@ -1,0 +1,427 @@
+{% extends "base.html" %}
+
+{% block title %}Каталог манги — MangaTracker{% endblock %}
+
+{% block content %}
+<!-- Фоновые эффекты -->
+<div class="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
+    <div class="absolute top-0 left-1/4 w-[500px] h-[500px] bg-indigo-600/10 rounded-full blur-[120px]"></div>
+    <div class="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-cyan-600/10 rounded-full blur-[120px]"></div>
+</div>
+
+<div class="container mx-auto px-4 py-12 max-w-7xl">
+    <!-- Заголовок -->
+    <div class="mb-10">
+        <div class="flex items-center gap-3 mb-3">
+            <div class="w-1 h-8 bg-gradient-to-b from-indigo-500 to-cyan-500 rounded-full"></div>
+            <span class="text-sm font-semibold text-cyan-400 uppercase tracking-widest">Библиотека произведений</span>
+        </div>
+        <h1 class="text-4xl md:text-5xl font-black font-display text-white">
+            Каталог <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">манги</span>
+        </h1>
+    </div>
+
+    <!-- Фильтры -->
+    <div class="bg-cardBg/80 backdrop-blur-md border border-borderDark rounded-2xl p-6 mb-8">
+        <form method="GET" action="{{ url_for('catalog') }}" class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+            <div class="md:col-span-6">
+                <label class="block text-sm font-semibold text-gray-300 mb-2">Поиск по названию</label>
+                <input type="text" name="search" value="{{ search_query|default('') }}" 
+                       placeholder="Например: Магическая битва"
+                       class="w-full px-4 py-3 bg-darkBg border border-borderDark rounded-xl text-white placeholder-gray-500 focus:border-primary focus:outline-none transition">
+            </div>
+            <div class="md:col-span-4">
+                <label class="block text-sm font-semibold text-gray-300 mb-2">Жанр</label>
+                <select name="genre" 
+                        class="w-full px-4 py-3 bg-darkBg border border-borderDark rounded-xl text-white focus:border-primary focus:outline-none transition">
+                    <option value="">Все жанры</option>
+                    {% for genre in genres %}
+                    <option value="{{ genre.id }}" {% if selected_genre|string == genre.id|string %}selected{% endif %}>
+                        {{ genre.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="md:col-span-2">
+                <button type="submit" 
+                        class="w-full py-3 bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 text-white font-semibold rounded-xl transition shadow-lg shadow-indigo-500/20">
+                    Применить
+                </button>
+            </div>
+        </form>
+    </div>
+
+    {% if current_user.is_authenticated and current_user.role == 'ADMIN' %}
+    <!-- Админ-уведомление -->
+    <div class="mb-6 p-4 bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/30 rounded-xl flex items-center gap-3">
+        <svg class="w-5 h-5 text-amber-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2L3 7v6c0 4.5 3 8.5 7 9 4-.5 7-4.5 7-9V7l-7-5z"/></svg>
+        <p class="text-sm text-amber-200">
+            <span class="font-bold">Режим администратора:</span> 
+            наведи курсор на карточку, чтобы редактировать или удалить мангу
+        </p>
+    </div>
+    {% endif %}
+
+    <!-- Каталог -->
+    {% if mangas %}
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5">
+        {% for manga in mangas %}
+        <div class="manga-card-wrap group relative">
+            <a href="{{ url_for('manga_detail', manga_id=manga.id) }}" class="manga-card block">
+                <div class="relative aspect-[2/3] rounded-xl overflow-hidden bg-cardBg">
+                    {% if manga.cover_image %}
+                    <img src="{{ manga.cover_image }}" 
+                         alt="{{ manga.title }}" 
+                         loading="lazy" 
+                         decoding="async"
+                         onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 200 300%22><rect fill=%22%23312e81%22 width=%22200%22 height=%22300%22/><text x=%22100%22 y=%22150%22 fill=%22%23a5b4fc%22 text-anchor=%22middle%22 font-size=%2216%22 font-family=%22sans-serif%22>No Cover</text></svg>';"
+                         class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
+                    {% else %}
+                    <div class="w-full h-full bg-gradient-to-br from-indigo-900 to-cyan-900 flex items-center justify-center">
+                        <svg class="w-12 h-12 text-white/30" fill="currentColor" viewBox="0 0 20 20"><path d="M4 3a2 2 0 100 4h12a2 2 0 100-4H4zm0 6a2 2 0 100 4h12a2 2 0 100-4H4zm0 6a2 2 0 100 4h12a2 2 0 100-4H4z"/></svg>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="absolute inset-0 bg-gradient-to-t from-darkBg via-darkBg/40 to-transparent opacity-90 pointer-events-none"></div>
+                    
+                    {% if manga.rating and manga.rating > 0 %}
+                    <div class="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 bg-black/70 backdrop-blur-md rounded-lg border border-amber-500/30">
+                        <svg class="w-3.5 h-3.5 text-amber-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                        <span class="text-xs font-bold text-white">{{ "%.1f"|format(manga.rating|float) }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="absolute bottom-0 left-0 right-0 p-4">
+                        <h3 class="text-white font-bold text-sm leading-tight line-clamp-2 mb-1 group-hover:text-cyan-400 transition">{{ manga.title }}</h3>
+                        {% if manga.status %}
+                        <p class="text-xs text-gray-400 uppercase tracking-wide">{{ manga.status }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </a>
+            
+            {% if current_user.is_authenticated and current_user.role == 'ADMIN' %}
+            <!-- Кнопки админа (видны при hover) -->
+            <div class="absolute top-3 left-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                <button type="button"
+                        data-action="edit"
+                        data-manga-id="{{ manga.id }}"
+                        class="admin-btn w-9 h-9 bg-indigo-600 hover:bg-indigo-500 rounded-lg flex items-center justify-center text-white shadow-lg transition" 
+                        title="Редактировать">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                </button>
+                <button type="button"
+                        data-action="delete"
+                        data-manga-id="{{ manga.id }}"
+                        data-manga-title="{{ manga.title|e }}"
+                        class="admin-btn w-9 h-9 bg-rose-600 hover:bg-rose-500 rounded-lg flex items-center justify-center text-white shadow-lg transition" 
+                        title="Удалить">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22M9 7V3a1 1 0 011-1h4a1 1 0 011 1v4"/></svg>
+                </button>
+            </div>
+            
+            <!-- Данные манги для JS (в JSON) -->
+            <script type="application/json" class="manga-data" data-manga-id="{{ manga.id }}">
+                {{ {
+                    'id': manga.id,
+                    'title': manga.title or '',
+                    'original_title': manga.original_title or '',
+                    'description': manga.description or '',
+                    'status': manga.status or '',
+                    'release_year': manga.release_year or '',
+                    'rating': manga.rating or 0,
+                    'chapters': manga.chapters_count or 0,
+                    'volumes': manga.volumes_count or 0,
+                    'cover_image': manga.cover_image or ''
+                }|tojson }}
+            </script>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-20">
+        <svg class="w-20 h-20 text-gray-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <h3 class="text-2xl font-bold text-gray-400 mb-2">Ничего не найдено</h3>
+        <p class="text-gray-500">Попробуй изменить параметры поиска</p>
+    </div>
+    {% endif %}
+</div>
+
+{% if current_user.is_authenticated and current_user.role == 'ADMIN' %}
+<!-- ============ МОДАЛКА РЕДАКТИРОВАНИЯ ============ -->
+<div id="editModal" class="fixed inset-0 z-[100] hidden items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+    <div class="bg-cardBg border border-borderDark rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl">
+        <div class="sticky top-0 bg-cardBg border-b border-borderDark px-6 py-4 flex items-center justify-between z-10">
+            <h2 class="text-2xl font-black font-display text-white">
+                Редактирование <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">манги</span>
+            </h2>
+            <button type="button" data-close-modal="editModal" class="w-9 h-9 rounded-lg bg-darkBg hover:bg-rose-600/20 hover:text-rose-400 text-gray-400 flex items-center justify-center transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        
+        <form id="editForm" method="POST" enctype="multipart/form-data" class="p-6 space-y-5">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="md:col-span-1">
+                    <label class="block text-sm font-semibold text-gray-300 mb-2">Текущая обложка</label>
+                    <div class="aspect-[2/3] rounded-xl overflow-hidden bg-darkBg border border-borderDark mb-3">
+                        <img id="modalCoverPreview" src="" alt="Cover" class="w-full h-full object-cover">
+                    </div>
+                    
+                    <label class="block text-sm font-semibold text-gray-300 mb-2">Новая обложка (файл)</label>
+                    <input type="file" name="cover_file" id="modalCoverFile" accept="image/*"
+                           class="w-full text-xs text-gray-400 file:mr-2 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-500 cursor-pointer mb-3">
+                    
+                    <label class="block text-sm font-semibold text-gray-300 mb-2">Или URL обложки</label>
+                    <input type="url" name="cover_url" id="modalCoverUrl"
+                           placeholder="https://..."
+                           class="w-full px-3 py-2 bg-darkBg border border-borderDark rounded-lg text-white text-sm focus:border-primary focus:outline-none transition">
+                </div>
+                
+                <div class="md:col-span-2 space-y-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-300 mb-2">Название</label>
+                        <input type="text" name="title" id="modalTitle" required
+                               class="w-full px-4 py-2.5 bg-darkBg border border-borderDark rounded-lg text-white focus:border-primary focus:outline-none transition">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-300 mb-2">Оригинальное название</label>
+                        <input type="text" name="original_title" id="modalOriginalTitle"
+                               class="w-full px-4 py-2.5 bg-darkBg border border-borderDark rounded-lg text-white focus:border-primary focus:outline-none transition">
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-300 mb-2">Год</label>
+                            <input type="number" name="release_year" id="modalYear" min="1900" max="2099"
+                                   class="w-full px-4 py-2.5 bg-darkBg border border-borderDark rounded-lg text-white focus:border-primary focus:outline-none transition">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-300 mb-2">Рейтинг (0-10)</label>
+                            <input type="number" name="rating" id="modalRating" step="0.1" min="0" max="10"
+                                   class="w-full px-4 py-2.5 bg-darkBg border border-borderDark rounded-lg text-white focus:border-primary focus:outline-none transition">
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-300 mb-2">Глав</label>
+                            <input type="number" name="chapters" id="modalChapters" min="0"
+                                   class="w-full px-4 py-2.5 bg-darkBg border border-borderDark rounded-lg text-white focus:border-primary focus:outline-none transition">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-300 mb-2">Томов</label>
+                            <input type="number" name="volumes" id="modalVolumes" min="0"
+                                   class="w-full px-4 py-2.5 bg-darkBg border border-borderDark rounded-lg text-white focus:border-primary focus:outline-none transition">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-300 mb-2">Статус</label>
+                        <select name="status" id="modalStatus"
+                                class="w-full px-4 py-2.5 bg-darkBg border border-borderDark rounded-lg text-white focus:border-primary focus:outline-none transition">
+                            <option value="ONGOING">В процессе (Ongoing)</option>
+                            <option value="COMPLETED">Завершено (Completed)</option>
+                            <option value="CANCELLED">Отменено (Cancelled)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-semibold text-gray-300 mb-2">Описание</label>
+                <textarea name="description" id="modalDescription" rows="5"
+                          class="w-full px-4 py-2.5 bg-darkBg border border-borderDark rounded-lg text-white focus:border-primary focus:outline-none transition resize-y"></textarea>
+            </div>
+            
+            <div class="flex flex-col sm:flex-row gap-3 pt-4 border-t border-borderDark">
+                <button type="submit" 
+                        class="flex-1 py-3 bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/30 transition">
+                    Сохранить изменения
+                </button>
+                <button type="button" data-close-modal="editModal"
+                        class="px-6 py-3 bg-darkBg border border-borderDark hover:border-gray-500 text-gray-300 font-semibold rounded-xl transition">
+                    Отмена
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ============ МОДАЛКА УДАЛЕНИЯ ============ -->
+<div id="deleteModal" class="fixed inset-0 z-[100] hidden items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+    <div class="bg-cardBg border border-rose-500/30 rounded-2xl w-full max-w-md p-6 shadow-2xl">
+        <div class="w-16 h-16 bg-rose-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        </div>
+        <h3 class="text-xl font-bold text-white text-center mb-2">Удалить мангу?</h3>
+        <p class="text-gray-400 text-center mb-6">
+            Вы действительно хотите удалить <span id="deleteMangaTitle" class="text-white font-semibold"></span>?<br>
+            <span class="text-rose-400 text-sm">Это действие необратимо.</span>
+        </p>
+        <form id="deleteForm" method="POST" class="flex gap-3">
+            <button type="submit" 
+                    class="flex-1 py-3 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl transition">
+                Да, удалить
+            </button>
+            <button type="button" data-close-modal="deleteModal"
+                    class="flex-1 py-3 bg-darkBg border border-borderDark hover:border-gray-500 text-gray-300 font-semibold rounded-xl transition">
+                Отмена
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+(function() {
+    'use strict';
+    
+    const PLACEHOLDER_SVG = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 300"><rect fill="%23312e81" width="200" height="300"/></svg>';
+    
+    // ============ ОТКРЫТИЕ МОДАЛКИ ============
+    function openModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (!modal) return;
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        document.body.style.overflow = 'hidden';
+    }
+    
+    function closeModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (!modal) return;
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        document.body.style.overflow = '';
+    }
+    
+    // ============ РЕДАКТИРОВАНИЕ ============
+    function openEditModal(mangaId) {
+        const dataScript = document.querySelector('.manga-data[data-manga-id="' + mangaId + '"]');
+        if (!dataScript) {
+            console.error('Данные манги не найдены для ID:', mangaId);
+            return;
+        }
+        
+        let data;
+        try {
+            data = JSON.parse(dataScript.textContent.trim());
+        } catch(e) {
+            console.error('Ошибка парсинга данных манги:', e);
+            return;
+        }
+        
+        const form = document.getElementById('editForm');
+        form.action = '/admin/manga/' + mangaId + '/edit';
+        
+        // Очищаем поле файла
+        const fileInput = document.getElementById('modalCoverFile');
+        if (fileInput) fileInput.value = '';
+        
+        document.getElementById('modalTitle').value = data.title || '';
+        document.getElementById('modalOriginalTitle').value = data.original_title || '';
+        document.getElementById('modalDescription').value = data.description || '';
+        document.getElementById('modalStatus').value = data.status || 'ONGOING';
+        document.getElementById('modalYear').value = data.release_year || '';
+        document.getElementById('modalRating').value = data.rating || 0;
+        document.getElementById('modalChapters').value = data.chapters || 0;
+        document.getElementById('modalVolumes').value = data.volumes || 0;
+        document.getElementById('modalCoverUrl').value = data.cover_image || '';
+        
+        const preview = document.getElementById('modalCoverPreview');
+        preview.src = data.cover_image || PLACEHOLDER_SVG;
+        preview.onerror = function() { this.onerror = null; this.src = PLACEHOLDER_SVG; };
+        
+        openModal('editModal');
+    }
+    
+    // ============ УДАЛЕНИЕ ============
+    function confirmDelete(mangaId, title) {
+        const form = document.getElementById('deleteForm');
+        form.action = '/admin/manga/' + mangaId + '/delete';
+        document.getElementById('deleteMangaTitle').textContent = '"' + (title || 'эту мангу') + '"';
+        openModal('deleteModal');
+    }
+    
+    // ============ ПРЕВЬЮ ЗАГРУЖАЕМОЙ ОБЛОЖКИ ============
+    document.getElementById('modalCoverFile')?.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+            document.getElementById('modalCoverPreview').src = ev.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
+    
+    // ============ ДЕЛЕГИРОВАНИЕ КЛИКОВ НА АДМИН-КНОПКИ ============
+    document.addEventListener('click', function(e) {
+        // Кнопки редактирования и удаления
+        const adminBtn = e.target.closest('.admin-btn');
+        if (adminBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const action = adminBtn.dataset.action;
+            const mangaId = adminBtn.dataset.mangaId;
+            
+            if (action === 'edit') {
+                openEditModal(mangaId);
+            } else if (action === 'delete') {
+                const title = adminBtn.dataset.mangaTitle || '';
+                confirmDelete(mangaId, title);
+            }
+            return;
+        }
+        
+        // Кнопки закрытия модалок
+        const closeBtn = e.target.closest('[data-close-modal]');
+        if (closeBtn) {
+            closeModal(closeBtn.dataset.closeModal);
+            return;
+        }
+        
+        // Клик по фону модалки (вне контента)
+        if (e.target.id === 'editModal') closeModal('editModal');
+        if (e.target.id === 'deleteModal') closeModal('deleteModal');
+    });
+    
+    // ============ ЗАКРЫТИЕ ПО ESC ============
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeModal('editModal');
+            closeModal('deleteModal');
+        }
+    });
+})();
+</script>
+
+<style>
+    .line-clamp-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    
+    .manga-card-wrap {
+        transition: transform 0.3s ease;
+    }
+    .manga-card-wrap:hover {
+        transform: translateY(-8px);
+    }
+    .manga-card .relative {
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        transition: box-shadow 0.3s ease;
+    }
+    .manga-card-wrap:hover .manga-card .relative {
+        box-shadow: 0 20px 50px rgba(99, 102, 241, 0.4);
+    }
+</style>
+{% endif %}
+
+{% endblock %}

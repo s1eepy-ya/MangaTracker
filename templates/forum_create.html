@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Создать тему — Форум{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-10 max-w-3xl">
+    <a href="{{ url_for('forum') }}" class="inline-flex items-center gap-2 text-gray-400 hover:text-cyan-400 transition mb-6">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+        Назад к форуму
+    </a>
+
+    <h1 class="text-3xl md:text-4xl font-black font-display text-white mb-2">Создать новую тему</h1>
+    <p class="text-gray-400 mb-8">Опиши тему, которую хочешь обсудить</p>
+
+    <form method="POST" class="space-y-5 bg-cardBg border border-borderDark rounded-2xl p-6 md:p-8">
+        <div>
+            <label class="block text-sm font-semibold text-gray-300 mb-2">Название темы <span class="text-pink">*</span></label>
+            <input type="text" name="title" required minlength="3" maxlength="200" 
+                   placeholder="Например: Какая ваша любимая манга?"
+                   class="w-full px-4 py-3 bg-darkBg border border-borderDark rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-primary transition">
+        </div>
+
+        <div>
+            <label class="block text-sm font-semibold text-gray-300 mb-2">Краткое описание <span class="text-gray-500 text-xs">(необязательно)</span></label>
+            <input type="text" name="description" maxlength="300"
+                   placeholder="Краткое описание темы для превью"
+                   class="w-full px-4 py-3 bg-darkBg border border-borderDark rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-primary transition">
+        </div>
+
+        <div>
+            <label class="block text-sm font-semibold text-gray-300 mb-2">Первое сообщение <span class="text-pink">*</span></label>
+            <textarea name="content" required minlength="5" rows="8"
+                      placeholder="Расскажи подробнее о теме..."
+                      class="w-full px-4 py-3 bg-darkBg border border-borderDark rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-primary transition resize-y"></textarea>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-3 pt-2">
+            <button type="submit" class="px-6 py-3 btn-gradient text-white font-bold rounded-xl shadow-lg shadow-indigo-500/30 hover:scale-105 transition-transform flex-1">
+                ✨ Создать тему
+            </button>
+            <a href="{{ url_for('forum') }}" class="px-6 py-3 bg-white/5 border border-borderDark text-gray-300 font-medium rounded-xl hover:bg-white/10 transition text-center">
+                Отмена
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}

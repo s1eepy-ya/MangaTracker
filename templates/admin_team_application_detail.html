@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mx-auto px-4 py-12 max-w-4xl">
+    <a href="{{ url_for('admin_team_applications') }}" class="text-cyan-400 hover:text-cyan-300 text-sm mb-4 inline-block">← К списку заявок</a>
+    
+    <div class="bg-cardBg/80 border border-borderDark rounded-2xl p-6 mb-6">
+        <div class="flex items-start gap-6 mb-6">
+            <div class="w-24 h-24 rounded-2xl bg-gradient-to-br from-indigo-500 to-cyan-500 flex items-center justify-center overflow-hidden">
+                {% if application.logo %}<img src="{{ application.logo }}" class="w-full h-full object-cover">{% else %}<span class="text-white text-4xl font-black">{{ application.name[0]|upper }}</span>{% endif %}
+            </div>
+            <div class="flex-1">
+                <h1 class="text-3xl font-black font-display text-white mb-2">{{ application.name }}</h1>
+                <p class="text-gray-400 mb-2">{{ application.short_description }}</p>
+                <p class="text-sm text-gray-500">От <a href="{{ url_for('profile', username=application.user.username) }}" class="text-cyan-400">{{ application.user.username }}</a></p>
+            </div>
+        </div>
+        
+        <div class="space-y-4">
+            <div>
+                <h3 class="text-sm font-bold text-gray-400 uppercase mb-2">Полное описание</h3>
+                <p class="text-gray-300 whitespace-pre-line">{{ application.full_description }}</p>
+            </div>
+            <div>
+                <h3 class="text-sm font-bold text-gray-400 uppercase mb-2">Языки</h3>
+                <p class="text-gray-300">{{ application.languages }}</p>
+            </div>
+            <div>
+                <h3 class="text-sm font-bold text-gray-400 uppercase mb-2">Требуемые роли</h3>
+                <p class="text-gray-300">{{ application.required_roles }}</p>
+            </div>
+            <div>
+                <h3 class="text-sm font-bold text-gray-400 uppercase mb-2">Причина создания</h3>
+                <p class="text-gray-300 whitespace-pre-line">{{ application.reason }}</p>
+            </div>
+            {% if application.additional_info %}
+            <div>
+                <h3 class="text-sm font-bold text-gray-400 uppercase mb-2">Дополнительно</h3>
+                <p class="text-gray-300 whitespace-pre-line">{{ application.additional_info }}</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    {% if application.status == 'PENDING' %}
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <form method="POST" action="{{ url_for('admin_approve_team', app_id=application.id) }}" onsubmit="return confirm('Одобрить заявку и создать команду?')">
+            <button type="submit" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl">✅ Одобрить</button>
+        </form>
+        <button onclick="document.getElementById('rejectForm').classList.toggle('hidden')" class="w-full py-3 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl">❌ Отклонить</button>
+    </div>
+    
+    <form id="rejectForm" method="POST" action="{{ url_for('admin_reject_team', app_id=application.id) }}" class="hidden mt-4 bg-cardBg/80 border border-rose-500/30 rounded-2xl p-6">
+        <label class="block text-sm font-semibold text-gray-300 mb-2">Причина отклонения <span class="text-rose-400">*</span></label>
+        <textarea name="rejection_reason" required rows="3" class="w-full px-4 py-2 bg-darkBg border border-borderDark rounded-lg text-white mb-3"></textarea>
+        <button type="submit" class="w-full py-3 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl">Отклонить заявку</button>
+    </form>
+    {% elif application.status == 'APPROVED' %}
+    <div class="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4 text-emerald-300">✅ Одобрено {{ application.reviewed_at.strftime('%d.%m.%Y %H:%M') }}</div>
+    {% elif application.status == 'REJECTED' %}
+    <div class="bg-rose-500/10 border border-rose-500/30 rounded-xl p-4">
+        <p class="text-rose-300 mb-2">❌ Отклонено {{ application.reviewed_at.strftime('%d.%m.%Y %H:%M') }}</p>
+        <p class="text-gray-300"><strong>Причина:</strong> {{ application.rejection_reason }}</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

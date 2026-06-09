@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mx-auto px-4 py-12 max-w-3xl">
+    <h1 class="text-3xl font-black font-display text-white mb-6">🔔 Уведомления</h1>
+    {% if notifications %}
+    <div class="space-y-3">
+        {% for n in notifications %}
+        <div class="bg-cardBg/80 border border-borderDark rounded-xl p-4">
+            <p class="text-gray-300">{{ n.content }}</p>
+            <p class="text-xs text-gray-500 mt-2">{{ n.created_at.strftime('%d.%m.%Y %H:%M') }}</p>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-center text-gray-500 py-12">Нет уведомлений</p>
+    {% endif %}
+</div>
+{% endblock %}

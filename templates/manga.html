@@ -1,0 +1,669 @@
+{% extends "base.html" %}
+
+{% block title %}{{ manga.title }} — MangaTracker{% endblock %}
+
+{% block content %}
+<!-- Фоновые эффекты -->
+<div class="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
+    <div class="absolute top-0 left-1/4 w-[500px] h-[500px] bg-indigo-600/10 rounded-full blur-[120px]"></div>
+    <div class="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-cyan-600/10 rounded-full blur-[120px]"></div>
+</div>
+
+<div class="container mx-auto px-4 py-12 max-w-6xl">
+
+    <!-- ============ ОСНОВНОЙ БЛОК МАНГИ ============ -->
+    <div class="bg-cardBg/80 backdrop-blur-md border border-borderDark rounded-3xl shadow-2xl">
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-8 p-6 md:p-10">
+
+            <!-- ОБЛОЖКА -->
+            <div class="md:col-span-4 lg:col-span-3">
+                <div class="relative aspect-[2/3] rounded-2xl overflow-hidden bg-darkBg border border-borderDark shadow-xl group">
+                    {% if manga.cover_image %}
+                    <img id="mangaCoverImg"
+                         src="{{ manga.cover_image }}"
+                         alt="{{ manga.title }}"
+                         loading="eager"
+                         decoding="async"
+                         onerror="this.onerror=null;this.style.display='none';document.getElementById('coverPlaceholder').classList.remove('hidden');"
+                         class="w-full h-full object-cover">
+                    {% endif %}
+
+                    <div id="coverPlaceholder" class="{% if manga.cover_image %}hidden{% endif %} absolute inset-0 bg-gradient-to-br from-indigo-900 via-purple-900 to-cyan-900 flex flex-col items-center justify-center text-white/60 p-4">
+                        <svg class="w-16 h-16 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                        <p class="text-center text-sm font-semibold">Обложка отсутствует</p>
+                        {% if current_user.is_authenticated and current_user.role == 'ADMIN' %}
+                        <p class="text-center text-xs mt-2 opacity-70">Загрузи её ниже ↓</p>
+                        {% endif %}
+                    </div>
+
+                    {% if current_user.is_authenticated and current_user.role == 'ADMIN' %}
+                    <label class="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center cursor-pointer transition z-10">
+                        <svg class="w-12 h-12 text-white mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                        <span class="text-white font-bold text-sm">Сменить обложку</span>
+                        <form id="quickCoverForm" method="POST" action="{{ url_for('admin_update_cover', manga_id=manga.id) }}" enctype="multipart/form-data" class="hidden">
+                            <input type="file" name="cover_file" id="quickCoverInput" accept="image/*">
+                        </form>
+                    </label>
+                    {% endif %}
+                </div>
+
+                {% if current_user.is_authenticated and current_user.role == 'ADMIN' %}
+                <div class="mt-4">
+                    <label class="block w-full text-center px-4 py-3 bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 text-white text-sm font-semibold rounded-xl cursor-pointer transition shadow-lg shadow-indigo-500/20">
+                        📤 Загрузить обложку
+                        <input type="file" id="bigCoverInput" accept="image/*" class="hidden">
+                    </label>
+                    <p class="text-xs text-gray-500 text-center mt-2">PNG, JPG, WEBP до 5MB</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- ИНФОРМАЦИЯ -->
+            <div class="md:col-span-8 lg:col-span-9">
+                <h1 class="text-4xl md:text-5xl font-black font-display text-white mb-2 leading-tight">
+                    {{ manga.title }}
+                </h1>
+
+                {% if manga.original_title %}
+                <p class="text-xl text-gray-400 mb-6 font-display">{{ manga.original_title }}</p>
+                {% endif %}
+
+                {% if manga.genres %}
+                <div class="flex flex-wrap gap-2 mb-6">
+                    {% for genre in manga.genres %}
+                    <a href="{{ url_for('catalog', genre=genre.id) }}"
+                       class="px-3 py-1.5 bg-indigo-600/20 hover:bg-indigo-600/40 border border-indigo-500/30 hover:border-indigo-500/60 text-indigo-200 text-sm font-medium rounded-lg transition">
+                        {{ genre.name }}
+                    </a>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <div class="border-t border-borderDark my-6"></div>
+
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-6">
+                    <div>
+                        <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">Рейтинг</p>
+                        <div class="flex items-center gap-2">
+                            <svg class="w-5 h-5 text-amber-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                            <span class="text-2xl font-bold text-white">{{ "%.1f"|format(manga.rating|float) if manga.rating else "—" }}</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">Год релиза</p>
+                        <p class="text-2xl font-bold text-white">{{ manga.release_year or "—" }}</p>
+                    </div>
+
+                    <div>
+                        <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">Статус</p>
+                        <p class="text-lg font-bold text-cyan-400">
+                            {% if manga.status == 'ONGOING' %}В процессе
+                            {% elif manga.status == 'COMPLETED' %}Завершено
+                            {% elif manga.status == 'CANCELLED' %}Отменено
+                            {% else %}{{ manga.status or "—" }}{% endif %}
+                        </p>
+                    </div>
+
+                    <div>
+                        <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">Главы / Тома</p>
+                        <p class="text-2xl font-bold text-white">
+                            {{ manga.chapters_count or 0 }} / {{ manga.volumes_count or 0 }}
+                        </p>
+                    </div>
+                </div>
+
+                <!-- ============ КНОПКА ЧИТАТЬ ============ -->
+                {% if chapters and chapters|length > 0 %}
+                {% set first_chapter = chapters[-1] %}
+                <a href="{{ url_for('chapter_read', manga_id=manga.id, chapter_id=first_chapter.id) }}"
+                   class="inline-flex items-center gap-2 px-6 py-3 mb-6 bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 text-white font-bold rounded-xl shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 hover:scale-105 transition-all">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    Читать с первой главы
+                </a>
+                {% endif %}
+
+                <!-- ============ БИБЛИОТЕКА (DROPDOWN) ============ -->
+                {% if current_user.is_authenticated %}
+                {% set current_status = library_entry.reading_status if library_entry else 'NONE' %}
+                {% set status_options = [
+                    {'value': 'NONE', 'label': 'Не в списке', 'icon': '➖', 'color': 'gray'},
+                    {'value': 'READING', 'label': 'Читаю', 'icon': '📖', 'color': 'cyan'},
+                    {'value': 'PLAN_TO_READ', 'label': 'Запланировано', 'icon': '📌', 'color': 'amber'},
+                    {'value': 'COMPLETED', 'label': 'Прочитано', 'icon': '✅', 'color': 'emerald'},
+                    {'value': 'ON_HOLD', 'label': 'Отложено', 'icon': '⏸', 'color': 'gray'},
+                    {'value': 'DROPPED', 'label': 'Брошено', 'icon': '❌', 'color': 'rose'}
+                ] %}
+
+                <div class="bg-gradient-to-br from-darkBg to-cardBg border border-borderDark rounded-2xl p-6 relative">
+                    <div class="absolute inset-0 overflow-hidden rounded-2xl pointer-events-none">
+                        <div class="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-3xl"></div>
+                    </div>
+
+                    <form method="POST" action="{{ url_for('update_library', manga_id=manga.id) }}" id="libraryForm" class="relative z-10">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-indigo-500/30">
+                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/></svg>
+                            </div>
+                            <div>
+                                <h3 class="text-white font-bold text-lg font-display">Статус чтения</h3>
+                                <p class="text-xs text-gray-400">Отслеживай свой прогресс</p>
+                            </div>
+                        </div>
+
+                        <div class="flex flex-col md:flex-row gap-3">
+                            <div class="custom-dropdown flex-1 relative" id="statusDropdown">
+                                <input type="hidden" name="status" id="statusInput" value="{{ current_status }}">
+
+                                <button type="button"
+                                        class="dropdown-trigger w-full px-4 py-3 bg-darkBg border-2 border-borderDark hover:border-indigo-500/50 rounded-xl text-left flex items-center justify-between transition-all group">
+                                    <span class="flex items-center gap-3" id="dropdownLabel">
+                                        {% for opt in status_options %}
+                                            {% if opt.value == current_status %}
+                                            <span class="text-2xl">{{ opt.icon }}</span>
+                                            <span class="font-semibold text-{{ opt.color }}-300">{{ opt.label }}</span>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </span>
+                                    <svg class="w-5 h-5 text-gray-400 group-hover:text-indigo-400 transition-transform dropdown-chevron"
+                                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                    </svg>
+                                </button>
+
+                                <div class="dropdown-menu absolute left-0 right-0 top-full mt-2 bg-cardBg border border-borderDark rounded-xl shadow-2xl overflow-hidden opacity-0 invisible translate-y-[-10px] transition-all z-50">
+                                    {% for opt in status_options %}
+                                    <button type="button"
+                                            data-value="{{ opt.value }}"
+                                            data-label="{{ opt.label }}"
+                                            data-icon="{{ opt.icon }}"
+                                            data-color="{{ opt.color }}"
+                                            class="dropdown-option w-full px-4 py-3 flex items-center gap-3 hover:bg-{{ opt.color }}-500/10 transition-all text-left border-l-4 border-transparent hover:border-{{ opt.color }}-500 {% if opt.value == current_status %}is-selected{% endif %}">
+                                        <span class="text-2xl">{{ opt.icon }}</span>
+                                        <span class="flex-1 font-medium text-gray-200">{{ opt.label }}</span>
+                                        {% if opt.value == current_status %}
+                                        <svg class="w-5 h-5 text-{{ opt.color }}-400 check-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+                                        </svg>
+                                        {% endif %}
+                                    </button>
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                            <button type="submit"
+                                    class="px-8 py-3 bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 hover:scale-105 transition-all flex items-center justify-center gap-2">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                Сохранить
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                {% else %}
+                <div class="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-5 flex items-center gap-3">
+                    <svg class="w-5 h-5 text-amber-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 5.495a26.62 26.62 0 001.319-3.466"/></svg>
+                    <p class="text-sm text-amber-200">
+                        <a href="{{ url_for('login') }}" class="font-bold underline hover:text-amber-100">Войди</a>
+                        или
+                        <a href="{{ url_for('register') }}" class="font-bold underline hover:text-amber-100">зарегистрируйся</a>,
+                        чтобы добавлять в библиотеку
+                    </p>
+                </div>
+                {% endif %}
+            </div>
+
+        </div>
+
+        <!-- ============ ОПИСАНИЕ ============ -->
+        {% if manga.description %}
+        <div class="border-t border-borderDark px-6 md:px-10 py-8">
+            <h2 class="text-2xl font-bold font-display text-white mb-4 flex items-center gap-2">
+                <div class="w-1 h-6 bg-gradient-to-b from-indigo-500 to-cyan-500 rounded-full"></div>
+                Описание
+            </h2>
+            <p class="text-gray-300 leading-relaxed whitespace-pre-line">{{ manga.description }}</p>
+        </div>
+        {% endif %}
+
+        <!-- ============ АВТОРЫ ============ -->
+        {% if manga.authors %}
+        <div class="border-t border-borderDark px-6 md:px-10 py-8">
+            <h2 class="text-2xl font-bold font-display text-white mb-4 flex items-center gap-2">
+                <div class="w-1 h-6 bg-gradient-to-b from-pink-500 to-amber-500 rounded-full"></div>
+                Авторы
+            </h2>
+            <div class="flex flex-wrap gap-3">
+                {% for author in manga.authors %}
+                <div class="flex items-center gap-3 px-4 py-2 bg-darkBg border border-borderDark rounded-xl">
+                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-pink-500 to-amber-500 flex items-center justify-center text-white font-bold">
+                        {{ author.name[0]|upper }}
+                    </div>
+                    <span class="text-white font-medium">{{ author.name }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- ============ КОМАНДЫ ПЕРЕВОДА ============ -->
+        {% if manga.translation_teams %}
+        <div class="border-t border-borderDark px-6 md:px-10 py-8">
+            <h2 class="text-2xl font-bold font-display text-white mb-4 flex items-center gap-2">
+                <div class="w-1 h-6 bg-gradient-to-b from-cyan-500 to-emerald-500 rounded-full"></div>
+                Переводят
+                <span class="text-base text-gray-500 font-normal">({{ manga.translation_teams|length }})</span>
+            </h2>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {% for team in manga.translation_teams %}
+                <a href="{{ url_for('team_detail', slug=team.slug) }}" class="block group">
+                    <div class="bg-darkBg border border-borderDark hover:border-cyan-500/50 rounded-xl p-4 transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-cyan-500/10">
+                        <div class="flex items-center gap-3">
+                            <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-indigo-500 to-cyan-500 flex items-center justify-center overflow-hidden flex-shrink-0 shadow-lg">
+                                {% if team.logo %}
+                                <img src="{{ team.logo }}" alt="{{ team.name }}" class="w-full h-full object-cover" onerror="this.style.display='none'">
+                                {% else %}
+                                <span class="text-white text-xl font-black">{{ team.name[0]|upper }}</span>
+                                {% endif %}
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <h3 class="text-white font-bold text-sm group-hover:text-cyan-400 transition line-clamp-1">{{ team.name }}</h3>
+                                {% if team.short_description %}
+                                <p class="text-xs text-gray-400 line-clamp-1 mt-0.5">{{ team.short_description }}</p>
+                                {% endif %}
+                                <div class="flex items-center gap-3 mt-1 text-xs text-gray-500">
+                                    <span class="flex items-center gap-0.5">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857"/></svg>
+                                        {{ team.members.count() }}
+                                    </span>
+                                    {% if team.is_recruiting %}
+                                    <span class="text-emerald-400 font-semibold">● Набор открыт</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <svg class="w-5 h-5 text-gray-500 group-hover:text-cyan-400 group-hover:translate-x-1 transition flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                            </svg>
+                        </div>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+
+    <!-- ============ ⭐ ГЛАВЫ ============ -->
+    <div class="bg-cardBg/80 backdrop-blur-md border border-borderDark rounded-3xl shadow-2xl mt-8 p-6 md:p-10">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+            <h2 class="text-2xl md:text-3xl font-bold font-display text-white flex items-center gap-3">
+                <div class="w-1 h-8 bg-gradient-to-b from-emerald-500 to-cyan-500 rounded-full"></div>
+                Главы
+                <span class="text-base text-gray-500 font-normal">({{ chapters|length if chapters else 0 }})</span>
+            </h2>
+
+            {% if user_teams_for_upload %}
+            <div class="flex flex-wrap gap-2">
+                {% for t in user_teams_for_upload %}
+                <a href="{{ url_for('chapter_add', slug=t.slug, manga_id=manga.id) }}"
+                   class="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 text-white text-sm font-semibold rounded-lg shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    Добавить главу
+                    <span class="text-cyan-100/80 font-normal">от «{{ t.name }}»</span>
+                </a>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+
+        {% if chapters and chapters|length > 0 %}
+        <div class="overflow-x-auto">
+            <div class="min-w-full">
+                <!-- Заголовок таблицы (только на десктопе) -->
+                <div class="hidden md:grid md:grid-cols-12 gap-4 px-4 py-3 text-xs text-gray-500 uppercase tracking-wider border-b border-borderDark">
+                    <div class="col-span-1">Том</div>
+                    <div class="col-span-1">Глава</div>
+                    <div class="col-span-4">Название</div>
+                    <div class="col-span-3">Команда</div>
+                    <div class="col-span-2">Дата</div>
+                    <div class="col-span-1 text-right">👁</div>
+                </div>
+
+                <div class="divide-y divide-borderDark">
+                    {% for ch in chapters %}
+                    <div class="group grid grid-cols-1 md:grid-cols-12 gap-2 md:gap-4 px-4 py-3 hover:bg-darkBg/60 rounded-xl transition items-center">
+
+                        <!-- ТОМ -->
+                        <div class="md:col-span-1 flex items-center gap-2">
+                            <span class="md:hidden text-xs text-gray-500 uppercase">Том:</span>
+                            <span class="text-gray-400">{{ ch.volume }}</span>
+                        </div>
+
+                        <!-- НОМЕР -->
+                        <div class="md:col-span-1">
+                            <span class="inline-flex items-center justify-center min-w-[2.5rem] px-2 py-1 bg-indigo-600/20 border border-indigo-500/30 text-indigo-200 font-bold rounded-lg text-sm">
+                                {{ ch.display_number }}
+                            </span>
+                        </div>
+
+                        <!-- НАЗВАНИЕ -->
+                        <div class="md:col-span-4">
+                            <a href="{{ url_for('chapter_read', manga_id=manga.id, chapter_id=ch.id) }}"
+                               class="text-white font-medium hover:text-cyan-400 transition line-clamp-1">
+                                {{ ch.title or 'Глава ' ~ ch.display_number }}
+                            </a>
+                            <p class="text-xs text-gray-500 mt-0.5">{{ ch.frames|length }} страниц</p>
+                        </div>
+
+                        <!-- КОМАНДА -->
+                        <div class="md:col-span-3">
+                            <a href="{{ url_for('team_detail', slug=ch.team.slug) }}"
+                               class="inline-flex items-center gap-2 text-sm text-gray-300 hover:text-cyan-400 transition">
+                                <span class="w-6 h-6 rounded-md bg-gradient-to-br from-indigo-500 to-cyan-500 flex items-center justify-center overflow-hidden flex-shrink-0">
+                                    {% if ch.team.logo %}
+                                    <img src="{{ ch.team.logo }}" alt="{{ ch.team.name }}" class="w-full h-full object-cover">
+                                    {% else %}
+                                    <span class="text-white text-[10px] font-black">{{ ch.team.name[0]|upper }}</span>
+                                    {% endif %}
+                                </span>
+                                <span class="line-clamp-1">{{ ch.team.name }}</span>
+                            </a>
+                        </div>
+
+                        <!-- ДАТА -->
+                        <div class="md:col-span-2 text-sm text-gray-500">
+                            {{ ch.created_at.strftime('%d.%m.%Y') }}
+                        </div>
+
+                        <!-- ПРОСМОТРЫ + УДАЛЕНИЕ -->
+                        <div class="md:col-span-1 flex items-center justify-end gap-2">
+                            <span class="text-xs text-gray-500 flex items-center gap-1">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                </svg>
+                                {{ ch.views or 0 }}
+                            </span>
+
+                            {% if current_user.is_authenticated and
+                                  (current_user.role == 'ADMIN'
+                                   or ch.uploader_id == current_user.id
+                                   or ch.team.owner_id == current_user.id) %}
+                            <form method="POST"
+                                  action="{{ url_for('chapter_delete', chapter_id=ch.id) }}"
+                                  onsubmit="return confirm('Удалить главу {{ ch.display_number }}? Это действие необратимо.');"
+                                  class="inline">
+                                <button type="submit"
+                                        title="Удалить главу"
+                                        class="opacity-0 group-hover:opacity-100 w-7 h-7 flex items-center justify-center rounded-md bg-rose-500/10 hover:bg-rose-500/30 text-rose-400 hover:text-rose-300 transition">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3"/>
+                                    </svg>
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <!-- Пусто -->
+        <div class="text-center py-12">
+            <div class="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-darkBg border border-borderDark mb-4">
+                <svg class="w-10 h-10 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                </svg>
+            </div>
+            <p class="text-gray-400 font-semibold">Пока нет ни одной главы</p>
+            {% if user_teams_for_upload %}
+            <p class="text-sm text-gray-500 mt-2">Будь первым, кто загрузит главу!</p>
+            {% else %}
+            <p class="text-sm text-gray-500 mt-2">Главы появятся, когда команды переводчиков их загрузят</p>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- ============ КОММЕНТАРИИ ============ -->
+    <div class="bg-cardBg/80 backdrop-blur-md border border-borderDark rounded-3xl shadow-2xl mt-8 p-6 md:p-10">
+        <h2 class="text-2xl md:text-3xl font-bold font-display text-white mb-6 flex items-center gap-3">
+            <div class="w-1 h-8 bg-gradient-to-b from-cyan-500 to-pink-500 rounded-full"></div>
+            Комментарии
+            <span class="text-base text-gray-500 font-normal">({{ comments|length if comments else 0 }})</span>
+        </h2>
+
+        {% if current_user.is_authenticated %}
+        <form method="POST" action="{{ url_for('add_comment', manga_id=manga.id) }}" class="mb-8">
+            <div class="flex gap-3">
+                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-cyan-500 flex items-center justify-center text-white font-bold flex-shrink-0 overflow-hidden">
+                    {% if current_user.avatar %}
+                    <img src="{{ current_user.avatar }}" alt="{{ current_user.username }}" class="w-full h-full object-cover">
+                    {% else %}
+                    {{ current_user.username[0]|upper }}
+                    {% endif %}
+                </div>
+                <div class="flex-1">
+                    <textarea name="comment" rows="3" required
+                              placeholder="Поделись своим мнением о манге..."
+                              class="w-full px-4 py-3 bg-darkBg border border-borderDark rounded-xl text-white focus:border-primary focus:outline-none transition resize-y"></textarea>
+                    <div class="flex justify-end mt-3">
+                        <button type="submit" class="px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 text-white font-semibold rounded-lg transition shadow-lg">
+                            Опубликовать
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+        {% else %}
+        <div class="bg-darkBg border border-borderDark rounded-xl p-5 mb-6 text-center">
+            <p class="text-gray-400">
+                <a href="{{ url_for('login') }}" class="text-cyan-400 hover:text-cyan-300 font-bold">Войди</a>,
+                чтобы оставить комментарий
+            </p>
+        </div>
+        {% endif %}
+
+        {% if comments and comments|length > 0 %}
+        <div class="space-y-4">
+            {% for comment in comments %}
+            <div class="flex gap-3">
+                <a href="{{ url_for('profile', username=comment.user.username) }}" class="flex-shrink-0">
+                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-pink-500 to-amber-500 flex items-center justify-center text-white font-bold overflow-hidden">
+                        {% if comment.user.avatar %}
+                        <img src="{{ comment.user.avatar }}" alt="{{ comment.user.username }}" class="w-full h-full object-cover">
+                        {% else %}
+                        {{ comment.user.username[0]|upper }}
+                        {% endif %}
+                    </div>
+                </a>
+                <div class="flex-1 bg-darkBg border border-borderDark rounded-xl p-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <a href="{{ url_for('profile', username=comment.user.username) }}" class="text-white font-semibold hover:text-cyan-400 transition">
+                            {{ comment.user.username }}
+                        </a>
+                        <span class="text-xs text-gray-500">{{ comment.created_at.strftime('%d.%m.%Y %H:%M') }}</span>
+                    </div>
+                    <p class="text-gray-300 leading-relaxed whitespace-pre-line">{{ comment.content }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-10 text-gray-500">
+            <svg class="w-16 h-16 mx-auto mb-3 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+            <p>Пока нет комментариев. Будь первым!</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    #statusDropdown .dropdown-chevron {
+        transition: transform 0.3s ease;
+    }
+    #statusDropdown .dropdown-trigger:focus {
+        outline: none;
+        border-color: rgba(99, 102, 241, 0.6) !important;
+        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+    }
+    #statusDropdown .dropdown-option {
+        cursor: pointer;
+    }
+    #statusDropdown .dropdown-option.is-selected {
+        background: linear-gradient(90deg, rgba(99, 102, 241, 0.15), transparent);
+    }
+    #statusDropdown .dropdown-option:active {
+        transform: scale(0.98);
+    }
+    #statusDropdown .dropdown-menu {
+        transition: opacity 0.2s ease, transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.2s;
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    #statusDropdown .dropdown-menu::-webkit-scrollbar { width: 6px; }
+    #statusDropdown .dropdown-menu::-webkit-scrollbar-track { background: transparent; }
+    #statusDropdown .dropdown-menu::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.3); border-radius: 3px; }
+</style>
+
+<script>
+(function() {
+    'use strict';
+
+    // ============ ДРОПДАУН СТАТУСА ============
+    const dropdown = document.getElementById('statusDropdown');
+    if (dropdown) {
+        const trigger = dropdown.querySelector('.dropdown-trigger');
+        const menu = dropdown.querySelector('.dropdown-menu');
+        const chevron = dropdown.querySelector('.dropdown-chevron');
+        const input = document.getElementById('statusInput');
+        const label = document.getElementById('dropdownLabel');
+        const options = dropdown.querySelectorAll('.dropdown-option');
+
+        const colorMap = {
+            'gray': 'text-gray-300',
+            'cyan': 'text-cyan-300',
+            'amber': 'text-amber-300',
+            'emerald': 'text-emerald-300',
+            'rose': 'text-rose-300'
+        };
+
+        function openDropdown() {
+            menu.classList.remove('opacity-0', 'invisible', 'translate-y-[-10px]');
+            menu.classList.add('opacity-100', 'visible', 'translate-y-0');
+            chevron.style.transform = 'rotate(180deg)';
+        }
+
+        function closeDropdown() {
+            menu.classList.add('opacity-0', 'invisible', 'translate-y-[-10px]');
+            menu.classList.remove('opacity-100', 'visible', 'translate-y-0');
+            chevron.style.transform = 'rotate(0deg)';
+        }
+
+        function isOpen() {
+            return menu.classList.contains('visible');
+        }
+
+        trigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (isOpen()) closeDropdown();
+            else openDropdown();
+        });
+
+        options.forEach(opt => {
+            opt.addEventListener('click', (e) => {
+                e.stopPropagation();
+
+                const value = opt.dataset.value;
+                const labelText = opt.dataset.label;
+                const icon = opt.dataset.icon;
+                const color = opt.dataset.color;
+
+                input.value = value;
+
+                const textColor = colorMap[color] || 'text-gray-300';
+                label.innerHTML = '<span class="text-2xl">' + icon + '</span><span class="font-semibold ' + textColor + '">' + labelText + '</span>';
+
+                options.forEach(o => {
+                    o.classList.remove('is-selected');
+                    const check = o.querySelector('.check-icon');
+                    if (check) check.remove();
+                });
+
+                opt.classList.add('is-selected');
+                const checkIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                checkIcon.setAttribute('class', 'w-5 h-5 text-' + color + '-400 check-icon');
+                checkIcon.setAttribute('fill', 'none');
+                checkIcon.setAttribute('stroke', 'currentColor');
+                checkIcon.setAttribute('viewBox', '0 0 24 24');
+                checkIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>';
+                opt.appendChild(checkIcon);
+
+                closeDropdown();
+            });
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!dropdown.contains(e.target)) closeDropdown();
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeDropdown();
+        });
+    }
+
+    // ============ ЗАГРУЗКА ОБЛОЖКИ (только для админа) ============
+    {% if current_user.is_authenticated and current_user.role == 'ADMIN' %}
+    const bigCoverInput = document.getElementById('bigCoverInput');
+    const quickCoverInput = document.getElementById('quickCoverInput');
+    const quickCoverForm = document.getElementById('quickCoverForm');
+
+    function handleUpload(file) {
+        if (!file || !quickCoverForm) return;
+
+        if (file.size > 5 * 1024 * 1024) {
+            alert('Файл слишком большой! Максимум 5 MB');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('cover_file', file);
+
+        const img = document.getElementById('mangaCoverImg');
+        if (img) img.style.opacity = '0.5';
+
+        fetch(quickCoverForm.action, {
+            method: 'POST',
+            body: formData
+        }).then(response => {
+            if (response.ok || response.redirected) {
+                window.location.reload();
+            } else {
+                alert('Ошибка загрузки!');
+                if (img) img.style.opacity = '1';
+            }
+        }).catch(err => {
+            console.error(err);
+            alert('Ошибка: ' + err.message);
+            if (img) img.style.opacity = '1';
+        });
+    }
+
+    if (bigCoverInput) {
+        bigCoverInput.addEventListener('change', e => handleUpload(e.target.files[0]));
+    }
+    if (quickCoverInput) {
+        quickCoverInput.addEventListener('change', e => handleUpload(e.target.files[0]));
+    }
+    {% endif %}
+})();
+</script>
+
+{% endblock %}

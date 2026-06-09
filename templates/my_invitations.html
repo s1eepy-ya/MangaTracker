@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mx-auto px-4 py-12 max-w-3xl">
+    <h1 class="text-3xl font-black font-display text-white mb-6">Приглашения в команды</h1>
+    {% if invitations %}
+    <div class="space-y-4">
+        {% for inv in invitations %}
+        <div class="bg-cardBg/80 border border-borderDark rounded-2xl p-6">
+            <div class="flex items-start gap-4 mb-4">
+                <div class="w-16 h-16 rounded-xl bg-gradient-to-br from-indigo-500 to-cyan-500 flex items-center justify-center overflow-hidden">
+                    {% if inv.team.logo %}<img src="{{ inv.team.logo }}" class="w-full h-full object-cover">{% else %}<span class="text-white text-2xl font-black">{{ inv.team.name[0]|upper }}</span>{% endif %}
+                </div>
+                <div class="flex-1">
+                    <h3 class="text-lg font-bold text-white">{{ inv.team.name }}</h3>
+                    <p class="text-sm text-gray-400">Роль: <span class="text-cyan-300 font-semibold">{{ inv.role }}</span></p>
+                    <p class="text-xs text-gray-500">От {{ inv.invited_by.username }}</p>
+                </div>
+            </div>
+            {% if inv.message %}
+            <p class="text-gray-300 text-sm bg-darkBg rounded-lg p-3 mb-3">{{ inv.message }}</p>
+            {% endif %}
+            <form method="POST" action="{{ url_for('respond_invitation', inv_id=inv.id) }}" class="flex gap-2">
+                <button type="submit" name="action" value="accept" class="flex-1 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg">✅ Принять</button>
+                <button type="submit" name="action" value="decline" class="flex-1 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-lg">❌ Отклонить</button>
+            </form>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-center text-gray-500 py-12">У вас нет приглашений</p>
+    {% endif %}
+</div>
+{% endblock %}

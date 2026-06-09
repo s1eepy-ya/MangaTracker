@@ -1,0 +1,293 @@
+{% extends "base.html" %}
+
+{% block title %}Глава {{ chapter.display_number }} — {{ manga.title }}{% endblock %}
+
+{% block content %}
+<!-- ============ ВЕРХНЯЯ ПАНЕЛЬ ============ -->
+<div id="readerHeader" class="sticky top-0 z-50 transition-transform duration-300">
+    <!-- Фон с blur и градиентом -->
+    <div class="absolute inset-0 bg-gradient-to-b from-cardBg via-cardBg/95 to-cardBg/80 backdrop-blur-xl"></div>
+    <div class="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-indigo-500/50 to-transparent"></div>
+
+    <div class="relative container mx-auto px-4 max-w-6xl">
+        <div class="flex items-center gap-3 py-3">
+
+            <!-- ◀ НАЗАД К МАНГЕ -->
+            <a href="{{ url_for('manga_detail', manga_id=manga.id) }}"
+               class="group flex items-center gap-2.5 px-3 py-2 bg-darkBg/60 hover:bg-darkBg border border-borderDark hover:border-cyan-500/40 rounded-xl transition-all flex-shrink-0 max-w-[180px] sm:max-w-[260px]">
+                <svg class="w-4 h-4 text-gray-400 group-hover:text-cyan-400 group-hover:-translate-x-0.5 transition flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/>
+                </svg>
+                <span class="text-sm text-gray-200 group-hover:text-white font-semibold truncate hidden sm:block">{{ manga.title }}</span>
+                <span class="text-sm text-gray-200 group-hover:text-white font-semibold sm:hidden">Назад</span>
+            </a>
+
+            <!-- 📖 ЦЕНТР: ИНФА О ГЛАВЕ -->
+            <div class="flex-1 min-w-0 text-center px-2">
+                <div class="inline-flex items-center gap-2 flex-wrap justify-center">
+                    <span class="hidden sm:inline-flex items-center px-2 py-0.5 bg-indigo-500/10 border border-indigo-500/30 rounded-md text-xs text-indigo-300 font-bold uppercase tracking-wider">
+                        Том {{ chapter.volume }}
+                    </span>
+
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-indigo-600/20 to-cyan-600/20 border border-cyan-500/30 rounded-lg">
+                        <svg class="w-3.5 h-3.5 text-cyan-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                        </svg>
+                        <span class="text-white font-bold text-sm whitespace-nowrap">Глава {{ chapter.display_number }}</span>
+                    </span>
+                </div>
+
+                {% if chapter.title %}
+                <p class="text-xs text-gray-400 mt-1 line-clamp-1 italic">«{{ chapter.title }}»</p>
+                {% endif %}
+
+                <a href="{{ url_for('team_detail', slug=chapter.team.slug) }}"
+                   class="hidden md:inline-flex items-center gap-1.5 mt-1 text-xs text-gray-500 hover:text-cyan-400 transition">
+                    <span class="w-4 h-4 rounded bg-gradient-to-br from-indigo-500 to-cyan-500 flex items-center justify-center overflow-hidden flex-shrink-0">
+                        {% if chapter.team.logo %}
+                        <img src="{{ chapter.team.logo }}" alt="" class="w-full h-full object-cover">
+                        {% else %}
+                        <span class="text-white text-[8px] font-black">{{ chapter.team.name[0]|upper }}</span>
+                        {% endif %}
+                    </span>
+                    Перевод: <span class="font-semibold">{{ chapter.team.name }}</span>
+                </a>
+            </div>
+
+            <!-- ◀ ▶ НАВИГАЦИЯ -->
+            <div class="flex items-center gap-1.5 flex-shrink-0">
+                {% if prev_ch %}
+                <a href="{{ url_for('chapter_read', manga_id=manga.id, chapter_id=prev_ch.id) }}"
+                   title="Предыдущая глава ({{ prev_ch.display_number }})"
+                   class="group flex items-center gap-1 px-3 py-2 bg-darkBg/60 hover:bg-indigo-600/20 border border-borderDark hover:border-indigo-500/50 rounded-xl text-gray-300 hover:text-indigo-200 transition-all">
+                    <svg class="w-4 h-4 group-hover:-translate-x-0.5 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                    <span class="hidden lg:inline text-sm font-semibold">Пред</span>
+                </a>
+                {% else %}
+                <div class="flex items-center gap-1 px-3 py-2 bg-darkBg/30 border border-borderDark/40 rounded-xl text-gray-600 cursor-not-allowed">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                    <span class="hidden lg:inline text-sm font-semibold">Пред</span>
+                </div>
+                {% endif %}
+
+                {% if next_ch %}
+                <a href="{{ url_for('chapter_read', manga_id=manga.id, chapter_id=next_ch.id) }}"
+                   title="Следующая глава ({{ next_ch.display_number }})"
+                   class="group flex items-center gap-1 px-4 py-2 bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 rounded-xl text-white font-bold shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 hover:scale-105 transition-all">
+                    <span class="hidden lg:inline text-sm">След</span>
+                    <svg class="w-4 h-4 group-hover:translate-x-0.5 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </a>
+                {% else %}
+                <div class="flex items-center gap-1 px-4 py-2 bg-darkBg/30 border border-borderDark/40 rounded-xl text-gray-600 cursor-not-allowed">
+                    <span class="hidden lg:inline text-sm font-semibold">След</span>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Прогресс-бар прокрутки -->
+        <div class="absolute bottom-0 left-0 right-0 h-0.5 bg-darkBg/50 overflow-hidden">
+            <div id="readProgress" class="h-full bg-gradient-to-r from-indigo-500 via-cyan-500 to-emerald-500 transition-[width] duration-150" style="width: 0%"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ============ ЧИТАЛКА ============ -->
+<div class="bg-black relative">
+    <!-- Лёгкое свечение по бокам -->
+    <div class="absolute inset-y-0 left-0 w-32 bg-gradient-to-r from-indigo-900/20 to-transparent pointer-events-none hidden xl:block"></div>
+    <div class="absolute inset-y-0 right-0 w-32 bg-gradient-to-l from-cyan-900/20 to-transparent pointer-events-none hidden xl:block"></div>
+
+    <div class="max-w-[900px] mx-auto relative">
+        {% for frame in chapter.frames %}
+        <img src="{{ url_for('static', filename=frame.image_path) }}"
+             alt="Страница {{ loop.index }}"
+             loading="lazy"
+             draggable="false"
+             class="block w-full h-auto select-none">
+        {% endfor %}
+    </div>
+</div>
+
+<!-- ============ НИЖНЯЯ НАВИГАЦИЯ ============ -->
+<div class="bg-gradient-to-b from-black via-cardBg to-cardBg border-t border-borderDark">
+    <div class="container mx-auto px-4 py-12 max-w-3xl">
+
+        <!-- Метаинфа главы -->
+        <div class="flex items-center justify-center gap-2 mb-6 text-sm text-gray-500">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+            </svg>
+            <span>Вы прочитали главу {{ chapter.display_number }}{% if chapter.title %} — «{{ chapter.title }}»{% endif %}</span>
+        </div>
+
+        <!-- Кнопки навигации -->
+        <div class="flex flex-col sm:flex-row items-stretch gap-3">
+
+            {% if prev_ch %}
+            <a href="{{ url_for('chapter_read', manga_id=manga.id, chapter_id=prev_ch.id) }}"
+               class="group flex-1 flex items-center gap-3 px-5 py-4 bg-darkBg/80 hover:bg-darkBg border border-borderDark hover:border-indigo-500/40 rounded-2xl transition-all">
+                <svg class="w-5 h-5 text-indigo-400 group-hover:-translate-x-1 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/>
+                </svg>
+                <div class="text-left flex-1 min-w-0">
+                    <p class="text-xs text-gray-500 uppercase tracking-wider">Предыдущая</p>
+                    <p class="text-white font-bold truncate">Глава {{ prev_ch.display_number }}{% if prev_ch.title %} — {{ prev_ch.title }}{% endif %}</p>
+                </div>
+            </a>
+            {% endif %}
+
+            {% if next_ch %}
+            <a href="{{ url_for('chapter_read', manga_id=manga.id, chapter_id=next_ch.id) }}"
+               class="group flex-1 flex items-center gap-3 px-5 py-4 bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 rounded-2xl shadow-xl shadow-indigo-500/30 hover:shadow-indigo-500/50 hover:scale-[1.02] transition-all">
+                <div class="text-left flex-1 min-w-0">
+                    <p class="text-xs text-indigo-100/80 uppercase tracking-wider">Следующая</p>
+                    <p class="text-white font-bold truncate">Глава {{ next_ch.display_number }}{% if next_ch.title %} — {{ next_ch.title }}{% endif %}</p>
+                </div>
+                <svg class="w-5 h-5 text-white group-hover:translate-x-1 transition flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/>
+                </svg>
+            </a>
+            {% else %}
+            <div class="flex-1 flex items-center gap-3 px-5 py-4 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl">
+                <div class="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                    <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+                    </svg>
+                </div>
+                <div class="text-left flex-1">
+                    <p class="text-xs text-emerald-300 uppercase tracking-wider font-semibold">Конец</p>
+                    <p class="text-white font-bold">Это последняя глава от «{{ chapter.team.name }}»</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Вторичные действия -->
+        <div class="flex flex-wrap items-center justify-center gap-2 mt-8 pt-6 border-t border-borderDark/50">
+            <a href="{{ url_for('manga_detail', manga_id=manga.id) }}"
+               class="inline-flex items-center gap-2 px-4 py-2 text-sm text-gray-400 hover:text-cyan-400 transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
+                </svg>
+                Все главы
+            </a>
+
+            <span class="text-gray-700">•</span>
+
+            <a href="{{ url_for('manga_detail', manga_id=manga.id) }}#comments"
+               class="inline-flex items-center gap-2 px-4 py-2 text-sm text-gray-400 hover:text-cyan-400 transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                </svg>
+                Обсудить
+            </a>
+
+            <span class="text-gray-700">•</span>
+
+            <button onclick="window.scrollTo({top:0, behavior:'smooth'})"
+                    class="inline-flex items-center gap-2 px-4 py-2 text-sm text-gray-400 hover:text-cyan-400 transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
+                </svg>
+                Наверх
+            </button>
+        </div>
+
+        <!-- Подсказка по клавишам -->
+        <div class="text-center mt-6 text-xs text-gray-600">
+            💡 Используй <kbd class="px-2 py-0.5 bg-darkBg border border-borderDark rounded text-gray-400 font-mono">←</kbd>
+            <kbd class="px-2 py-0.5 bg-darkBg border border-borderDark rounded text-gray-400 font-mono">→</kbd>
+            для переключения глав
+        </div>
+    </div>
+</div>
+
+<!-- Кнопка «Наверх» (плавающая) -->
+<button id="scrollTopBtn"
+        onclick="window.scrollTo({top:0, behavior:'smooth'})"
+        class="fixed bottom-6 right-6 z-40 w-12 h-12 bg-gradient-to-br from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 text-white rounded-full shadow-2xl shadow-indigo-500/40 hover:scale-110 transition-all opacity-0 invisible">
+    <svg class="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
+    </svg>
+</button>
+
+<script>
+(function() {
+    'use strict';
+
+    // ============ КЛАВИАТУРА ============
+    document.addEventListener('keydown', (e) => {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
+
+        if (e.key === 'ArrowLeft') {
+            {% if prev_ch %}
+            window.location.href = "{{ url_for('chapter_read', manga_id=manga.id, chapter_id=prev_ch.id) }}";
+            {% endif %}
+        } else if (e.key === 'ArrowRight') {
+            {% if next_ch %}
+            window.location.href = "{{ url_for('chapter_read', manga_id=manga.id, chapter_id=next_ch.id) }}";
+            {% endif %}
+        }
+    });
+
+    // ============ ПРОГРЕСС-БАР ПРОКРУТКИ ============
+    const progressBar = document.getElementById('readProgress');
+    const header = document.getElementById('readerHeader');
+    const scrollTopBtn = document.getElementById('scrollTopBtn');
+
+    let lastScroll = 0;
+    let ticking = false;
+
+    function updateUI() {
+        const scrollTop = window.scrollY;
+        const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        const pct = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+
+        // Прогресс
+        if (progressBar) progressBar.style.width = pct + '%';
+
+        // Кнопка "Наверх"
+        if (scrollTopBtn) {
+            if (scrollTop > 600) {
+                scrollTopBtn.classList.remove('opacity-0', 'invisible');
+                scrollTopBtn.classList.add('opacity-100', 'visible');
+            } else {
+                scrollTopBtn.classList.add('opacity-0', 'invisible');
+                scrollTopBtn.classList.remove('opacity-100', 'visible');
+            }
+        }
+
+        // Автоскрытие шапки при скролле вниз
+        if (header) {
+            if (scrollTop > 200 && scrollTop > lastScroll) {
+                header.style.transform = 'translateY(-100%)';
+            } else {
+                header.style.transform = 'translateY(0)';
+            }
+        }
+        lastScroll = scrollTop;
+        ticking = false;
+    }
+
+    window.addEventListener('scroll', () => {
+        if (!ticking) {
+            window.requestAnimationFrame(updateUI);
+            ticking = true;
+        }
+    }, { passive: true });
+
+    updateUI();
+})();
+</script>
+{% endblock %}

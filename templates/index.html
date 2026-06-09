@@ -1,0 +1,853 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- ============ HERO SECTION ============ -->
+<div class="w-full pt-10 pb-20 overflow-hidden relative" id="hero-section">
+    <div class="absolute inset-0 z-0">
+        <div class="animated-bg"></div>
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+        <div class="orb orb-4"></div>
+        <div class="orb orb-5"></div>
+        <div class="grid-overlay"></div>
+        <div class="stars-container" id="stars-container"></div>
+        <div class="particles-container" id="particles-container"></div>
+        <div class="light-rays">
+            <div class="ray ray-1"></div>
+            <div class="ray ray-2"></div>
+            <div class="ray ray-3"></div>
+        </div>
+        <div class="nebula nebula-1"></div>
+        <div class="nebula nebula-2"></div>
+        <div class="vignette"></div>
+    </div>
+
+    <div class="max-w-[1600px] mx-auto px-4 relative z-10">
+        <div id="blocks-container" class="relative flex h-[500px] md:h-[650px] w-full rounded-2xl overflow-hidden shadow-[0_0_60px_rgba(99,102,241,0.3)] bg-gray-900/80 backdrop-blur-sm border-2 border-indigo-900/50 transition-all duration-700">
+
+    {# Первые 3 блока #}
+    {% for block in hero_blocks[:3] %}
+    <a href="{% if block.manga_id %}{{ url_for('manga_detail', manga_id=block.manga_id) }}{% else %}#{% endif %}" 
+       class="hero-block flex-1 relative border-r-2 border-indigo-900/30 overflow-hidden cursor-pointer group">
+        <img src="{{ url_for('static', filename='img/' + block.image_filename) }}" 
+             loading="eager" decoding="async" fetchpriority="high" 
+             onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 300 600%22><rect fill=%22%23312e81%22 width=%22300%22 height=%22600%22/></svg>';"
+             class="absolute inset-0 w-full h-full object-cover" 
+             alt="Hero block {{ block.position }}">
+        <div class="absolute inset-0 bg-black/40 group-hover:bg-transparent transition-colors duration-500"></div>
+        {% if current_user.is_authenticated and current_user.role == 'ADMIN' %}
+        <a href="{{ url_for('admin_hero') }}" class="absolute top-2 right-2 z-30 w-8 h-8 bg-indigo-600 hover:bg-indigo-500 rounded-lg flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition" title="Редактировать">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+        </a>
+        {% endif %}
+    </a>
+    {% endfor %}
+
+    {# Play Block #}
+    <a href="{{ url_for('catalog') }}" id="play-block" class="flex-1 relative border-r-2 border-indigo-900/30 overflow-hidden cursor-pointer flex flex-col items-center justify-center transition-all duration-500 bg-gradient-to-b from-indigo-600/90 to-cyan-600/90 hover:from-indigo-500 hover:to-cyan-500 group">
+        <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.1)_0%,transparent_70%)]"></div>
+        <div class="w-16 h-16 md:w-20 md:h-20 bg-white rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(255,255,255,0.4)] transform transition-transform duration-300 group-hover:scale-110 mb-4 z-30 pulse-anim">
+            <svg class="w-8 h-8 md:w-10 md:h-10 text-indigo-600 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M4 4l12 6-12 6z"></path>
+            </svg>
+        </div>
+        <span class="text-white font-bold text-lg md:text-xl tracking-wider uppercase z-30 text-center px-2 glow-text">Начать<br>Читать</span>
+    </a>
+
+    {# Последние 3 блока #}
+    {% for block in hero_blocks[3:] %}
+    <a href="{% if block.manga_id %}{{ url_for('manga_detail', manga_id=block.manga_id) }}{% else %}#{% endif %}" 
+       class="hero-block flex-1 relative {% if not loop.last %}border-r-2 border-indigo-900/30{% endif %} overflow-hidden cursor-pointer group">
+        <img src="{{ url_for('static', filename='img/' + block.image_filename) }}" 
+             loading="eager" decoding="async" fetchpriority="high" 
+             onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 300 600%22><rect fill=%22%23312e81%22 width=%22300%22 height=%22600%22/></svg>';"
+             class="absolute inset-0 w-full h-full object-cover" 
+             alt="Hero block {{ block.position }}">
+        <div class="absolute inset-0 bg-black/40 group-hover:bg-transparent transition-colors duration-500"></div>
+        {% if current_user.is_authenticated and current_user.role == 'ADMIN' %}
+        <a href="{{ url_for('admin_hero') }}" class="absolute top-2 right-2 z-30 w-8 h-8 bg-indigo-600 hover:bg-indigo-500 rounded-lg flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition" title="Редактировать">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+        </a>
+        {% endif %}
+    </a>
+    {% endfor %}
+    </div>
+    </div>
+</div>
+
+<!-- ============ СТАТИСТИКА ============ -->
+<section class="py-16 relative content-visibility-auto">
+    <div class="absolute inset-0 bg-gradient-to-b from-transparent via-indigo-950/20 to-transparent pointer-events-none"></div>
+    <div class="container mx-auto px-4 relative z-10">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div class="stat-card">
+                <div class="stat-icon bg-gradient-to-br from-indigo-500/20 to-indigo-700/20 border-indigo-500/30">
+                    <svg class="w-7 h-7 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+                </div>
+                <div class="counter font-display" data-target="{{ stats.manga_count|default(0) }}">0</div>
+                <p class="text-gray-400 text-sm mt-1">Манги в каталоге</p>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon bg-gradient-to-br from-cyan-500/20 to-cyan-700/20 border-cyan-500/30">
+                    <svg class="w-7 h-7 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                </div>
+                <div class="counter font-display" data-target="{{ stats.users_count|default(0) }}">0</div>
+                <p class="text-gray-400 text-sm mt-1">Активных читателей</p>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon bg-gradient-to-br from-pink-500/20 to-pink-700/20 border-pink-500/30">
+                    <svg class="w-7 h-7 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                </div>
+                <div class="counter font-display" data-target="{{ stats.chapters_count|default(0) }}">0</div>
+                <p class="text-gray-400 text-sm mt-1">Глав доступно</p>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon bg-gradient-to-br from-amber-500/20 to-amber-700/20 border-amber-500/30">
+                    <svg class="w-7 h-7 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
+                </div>
+                <div class="counter font-display" data-target="{{ stats.genres_count|default(0) }}">0</div>
+                <p class="text-gray-400 text-sm mt-1">Жанров</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ============ ПОПУЛЯРНАЯ МАНГА ============ -->
+{% if popular_mangas %}
+<section class="py-16 relative overflow-hidden content-visibility-auto">
+    <div class="container mx-auto px-4">
+        <div class="flex items-end justify-between mb-10 reveal">
+            <div>
+                <div class="flex items-center gap-3 mb-3">
+                    <div class="w-1 h-8 bg-gradient-to-b from-indigo-500 to-cyan-500 rounded-full"></div>
+                    <span class="text-sm font-semibold text-cyan-400 uppercase tracking-widest">Топ читателей</span>
+                </div>
+                <h2 class="text-4xl md:text-5xl font-black font-display text-white">
+                    Популярная <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">манга</span>
+                </h2>
+            </div>
+            <a href="{{ url_for('catalog') }}" class="hidden md:flex items-center gap-2 text-gray-400 hover:text-cyan-400 transition group">
+                <span class="font-medium">Все произведения</span>
+                <svg class="w-5 h-5 transform group-hover:translate-x-1 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+            </a>
+        </div>
+        
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-5 reveal">
+            {% for manga in popular_mangas %}
+            <a href="{{ url_for('manga_detail', manga_id=manga.id) }}" class="manga-card group">
+                <div class="relative aspect-[2/3] rounded-xl overflow-hidden bg-cardBg">
+                    {% if manga.cover_image %}
+                        <img src="{{ manga.cover_image }}" 
+                             alt="{{ manga.title|default('Манга') }}" 
+                             loading="lazy" 
+                             decoding="async" 
+                             onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 200 300%22><rect fill=%22%23312e81%22 width=%22200%22 height=%22300%22/><text x=%22100%22 y=%22150%22 fill=%22%23a5b4fc%22 text-anchor=%22middle%22 font-size=%2218%22 font-family=%22sans-serif%22>No Cover</text></svg>';this.classList.add('loaded');" 
+                             class="manga-img w-full h-full object-cover">
+                    {% else %}
+                        <div class="w-full h-full bg-gradient-to-br from-indigo-900 to-cyan-900 flex items-center justify-center">
+                            <svg class="w-12 h-12 text-white/30" fill="currentColor" viewBox="0 0 20 20"><path d="M4 3a2 2 0 100 4h12a2 2 0 100-4H4zm0 6a2 2 0 100 4h12a2 2 0 100-4H4zm0 6a2 2 0 100 4h12a2 2 0 100-4H4z"/></svg>
+                        </div>
+                    {% endif %}
+                    <div class="absolute inset-0 bg-gradient-to-t from-darkBg via-darkBg/40 to-transparent opacity-90 pointer-events-none"></div>
+                    
+                    {% if manga.rating and manga.rating > 0 %}
+                    <div class="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 bg-black/70 backdrop-blur-md rounded-lg border border-amber-500/30">
+                        <svg class="w-3.5 h-3.5 text-gold" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                        <span class="text-xs font-bold text-white">{{ "%.1f"|format(manga.rating|float) }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if manga.status %}
+                    <div class="absolute top-3 left-3 px-2 py-1 bg-indigo-500/80 backdrop-blur-md rounded-md text-[10px] font-bold text-white uppercase tracking-wide">
+                        {% if manga.status == 'ONGOING' %}В процессе
+                        {% elif manga.status == 'COMPLETED' %}Завершено
+                        {% elif manga.status == 'CANCELLED' %}Отменено
+                        {% else %}{{ manga.status }}{% endif %}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="absolute bottom-0 left-0 right-0 p-4">
+                        <h3 class="text-white font-bold text-sm leading-tight line-clamp-2 mb-1 group-hover:text-cyan-400 transition">{{ manga.title|default('Без названия') }}</h3>
+                        <div class="flex items-center gap-2 text-xs text-gray-400">
+                            {% if manga.release_year %}<span>{{ manga.release_year }}</span>{% endif %}
+                            {% if manga.chapters_count and manga.chapters_count > 0 %}<span>•</span><span>{{ manga.chapters_count }} гл.</span>{% endif %}
+                        </div>
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- ============ ЖАНРЫ ============ -->
+{% if genres %}
+<section class="py-16 relative content-visibility-auto">
+    <div class="container mx-auto px-4">
+        <div class="text-center mb-12 reveal">
+            <div class="flex items-center justify-center gap-3 mb-3">
+                <div class="w-12 h-px bg-gradient-to-r from-transparent to-pink"></div>
+                <span class="text-sm font-semibold text-pink uppercase tracking-widest">Выбери своё</span>
+                <div class="w-12 h-px bg-gradient-to-l from-transparent to-pink"></div>
+            </div>
+            <h2 class="text-4xl md:text-5xl font-black font-display text-white">
+                Найди мангу по <span class="text-transparent bg-clip-text bg-gradient-to-r from-pink to-amber-400">жанру</span>
+            </h2>
+        </div>
+        <div class="flex flex-wrap justify-center gap-3 reveal">
+            {% for genre in genres %}
+            <a href="{{ url_for('catalog', genre=genre.id) }}" class="genre-chip">
+                <span class="relative z-10">{{ genre.name }}</span>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- ============ НОВИНКИ ============ -->
+{% if new_mangas %}
+<section class="py-16 relative overflow-hidden content-visibility-auto">
+    <div class="absolute inset-0 bg-gradient-to-b from-indigo-950/20 via-transparent to-cyan-950/20 pointer-events-none"></div>
+    <div class="container mx-auto px-4 relative z-10">
+        <div class="flex items-end justify-between mb-10 reveal">
+            <div>
+                <div class="flex items-center gap-3 mb-3">
+                    <div class="w-1 h-8 bg-gradient-to-b from-pink to-amber-400 rounded-full"></div>
+                    <span class="text-sm font-semibold text-amber-400 uppercase tracking-widest">Свежее</span>
+                </div>
+                <h2 class="text-4xl md:text-5xl font-black font-display text-white">
+                    Новинки <span class="text-transparent bg-clip-text bg-gradient-to-r from-pink to-amber-400">недели</span>
+                </h2>
+            </div>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 reveal">
+            {% for manga in new_mangas %}
+            <a href="{{ url_for('manga_detail', manga_id=manga.id) }}" class="new-card group">
+                <div class="relative aspect-[2/3] rounded-xl overflow-hidden bg-cardBg">
+                    {% if manga.cover_image %}
+                        <img src="{{ manga.cover_image }}" 
+                             alt="{{ manga.title|default('Манга') }}" 
+                             loading="lazy" 
+                             decoding="async" 
+                             onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 200 300%22><rect fill=%22%23831843%22 width=%22200%22 height=%22300%22/><text x=%22100%22 y=%22150%22 fill=%22%23fbcfe8%22 text-anchor=%22middle%22 font-size=%2218%22 font-family=%22sans-serif%22>No Cover</text></svg>';this.classList.add('loaded');" 
+                             class="manga-img w-full h-full object-cover">
+                    {% else %}
+                        <div class="w-full h-full bg-gradient-to-br from-pink-900 to-amber-900"></div>
+                    {% endif %}
+                    <div class="absolute inset-0 bg-gradient-to-t from-darkBg via-darkBg/30 to-transparent pointer-events-none"></div>
+                    <div class="absolute top-2 left-2 px-2 py-0.5 bg-gradient-to-r from-pink to-amber-500 rounded text-[10px] font-bold text-white uppercase">NEW</div>
+                    <div class="absolute bottom-0 left-0 right-0 p-3">
+                        <h3 class="text-white font-bold text-xs line-clamp-2 group-hover:text-amber-400 transition">{{ manga.title|default('Без названия') }}</h3>
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- ============ ПРЕИМУЩЕСТВА ============ -->
+<section class="py-20 relative content-visibility-auto">
+    <div class="container mx-auto px-4">
+        <div class="text-center mb-16 reveal">
+            <h2 class="text-4xl md:text-5xl font-black font-display text-white mb-4">
+                Почему <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-cyan-400 to-pink">MangaTracker</span>?
+            </h2>
+            <p class="text-gray-400 max-w-2xl mx-auto">Всё, что нужно настоящему фанату манги — в одном месте</p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="feature-card reveal">
+                <div class="feature-icon bg-gradient-to-br from-indigo-500 to-indigo-700">
+                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+                </div>
+                <h3 class="text-xl font-bold text-white mb-2 font-display">Удобное отслеживание</h3>
+                <p class="text-gray-400 text-sm leading-relaxed">Веди учёт прочитанных глав, оценивай мангу и собирай личную коллекцию любимых произведений.</p>
+            </div>
+            <div class="feature-card reveal">
+                <div class="feature-icon bg-gradient-to-br from-cyan-500 to-cyan-700">
+                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/></svg>
+                </div>
+                <h3 class="text-xl font-bold text-white mb-2 font-display">Активное сообщество</h3>
+                <p class="text-gray-400 text-sm leading-relaxed">Обсуждай главы, читай рецензии и делись мнением с тысячами таких же фанатов манги.</p>
+            </div>
+            <div class="feature-card reveal">
+                <div class="feature-icon bg-gradient-to-br from-pink to-rose-600">
+                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                </div>
+                <h3 class="text-xl font-bold text-white mb-2 font-display">Быстрый поиск</h3>
+                <p class="text-gray-400 text-sm leading-relaxed">Находи мангу по жанрам, авторам и статусу. Удобные фильтры — твой ключ к идеальному выбору.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ============ CTA ============ -->
+{% if not current_user.is_authenticated %}
+<section class="py-20 relative content-visibility-auto">
+    <div class="container mx-auto px-4">
+        <div class="relative rounded-3xl overflow-hidden bg-gradient-to-br from-indigo-900 via-purple-900 to-cyan-900 p-12 md:p-16 reveal">
+            <div class="absolute top-0 right-0 w-96 h-96 bg-cyan-500/20 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="absolute bottom-0 left-0 w-96 h-96 bg-pink/20 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="relative z-10 text-center max-w-3xl mx-auto">
+                <h2 class="text-4xl md:text-5xl font-black font-display text-white mb-6">
+                    Готов начать своё <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-pink-300">приключение</span>?
+                </h2>
+                <p class="text-gray-200 text-lg mb-8">
+                    Присоединяйся к тысячам читателей и открой для себя удивительный мир манги уже сегодня
+                </p>
+                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                    <a href="{{ url_for('register') }}" class="px-8 py-4 btn-gradient text-white font-bold rounded-xl shadow-2xl shadow-indigo-500/30 hover:scale-105 transition-transform">
+                        Создать аккаунт бесплатно
+                    </a>
+                    <a href="{{ url_for('catalog') }}" class="px-8 py-4 bg-white/10 backdrop-blur-md border border-white/20 text-white font-bold rounded-xl hover:bg-white/20 transition">
+                        Смотреть каталог
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<style>
+    /* ============ ОПТИМИЗАЦИЯ РЕНДЕРИНГА ============ */
+    .content-visibility-auto {
+        content-visibility: auto;
+        contain-intrinsic-size: auto 500px;
+    }
+    
+    /* ============ HERO ============ */
+    #hero-section, #blocks-container {
+        transform: translateZ(0);
+        backface-visibility: hidden;
+        contain: layout style paint;
+    }
+    
+    .animated-bg {
+        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        background: 
+            radial-gradient(ellipse at 20% 50%, rgba(99, 102, 241, 0.4) 0%, transparent 50%),
+            radial-gradient(ellipse at 80% 20%, rgba(15, 23, 42, 0.8) 0%, transparent 50%),
+            radial-gradient(ellipse at 60% 80%, rgba(6, 182, 212, 0.25) 0%, transparent 50%),
+            linear-gradient(180deg, #030014 0%, #0a0020 30%, #0a1230 60%, #0d001a 100%);
+        z-index: 0;
+        contain: strict;
+    }
+    
+    .orb {
+        position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.5;
+        will-change: transform; contain: strict;
+    }
+    .orb-1 { width: 600px; height: 600px; background: radial-gradient(circle, rgba(99, 102, 241, 0.6) 0%, transparent 70%); top: -200px; left: -100px; animation: orbFloat1 20s ease-in-out infinite; }
+    .orb-2 { width: 500px; height: 500px; background: radial-gradient(circle, rgba(6, 182, 212, 0.4) 0%, transparent 70%); bottom: -150px; right: -100px; animation: orbFloat2 25s ease-in-out infinite; }
+    .orb-3 { width: 400px; height: 400px; background: radial-gradient(circle, rgba(236, 72, 153, 0.3) 0%, transparent 70%); top: 50%; left: 50%; transform: translate(-50%, -50%); animation: orbFloat3 18s ease-in-out infinite; }
+    .orb-4 { width: 350px; height: 350px; background: radial-gradient(circle, rgba(168, 85, 247, 0.35) 0%, transparent 70%); top: 20%; right: 20%; animation: orbFloat4 22s ease-in-out infinite; }
+    .orb-5 { width: 300px; height: 300px; background: radial-gradient(circle, rgba(251, 191, 36, 0.2) 0%, transparent 70%); bottom: 10%; left: 30%; animation: orbFloat5 28s ease-in-out infinite; }
+    
+    @keyframes orbFloat1 { 0%,100%{transform:translate3d(0,0,0) scale(1);} 50%{transform:translate3d(50px,100px,0) scale(0.9);} }
+    @keyframes orbFloat2 { 0%,100%{transform:translate3d(0,0,0) scale(1);} 50%{transform:translate3d(-40px,-80px,0) scale(0.85);} }
+    @keyframes orbFloat3 { 0%,100%{transform:translate3d(-50%,-50%,0) scale(1);} 50%{transform:translate3d(-60%,-40%,0) scale(0.8);} }
+    @keyframes orbFloat4 { 0%,100%{transform:translate3d(0,0,0) scale(1);} 50%{transform:translate3d(-60px,40px,0) scale(1.2);} }
+    @keyframes orbFloat5 { 0%,100%{transform:translate3d(0,0,0) scale(1);} 50%{transform:translate3d(80px,-60px,0) scale(1.15);} }
+    
+    .grid-overlay {
+        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        background-image: linear-gradient(rgba(99, 102, 241, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(99, 102, 241, 0.03) 1px, transparent 1px);
+        background-size: 60px 60px; z-index: 2;
+        mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+        -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+        contain: strict;
+    }
+    
+    .stars-container, .particles-container { position: absolute; width: 100%; height: 100%; z-index: 1; pointer-events: none; contain: strict; }
+    .particles-container { z-index: 3; overflow: hidden; }
+    
+    .star {
+        position: absolute; width: 2px; height: 2px; background: white; border-radius: 50%;
+        animation: twinkle 3s ease-in-out infinite;
+        will-change: opacity, transform;
+    }
+    @keyframes twinkle { 0%,100%{opacity:0.2;transform:scale(1);} 50%{opacity:1;transform:scale(1.5);} }
+    
+    .particle {
+        position: absolute; border-radius: 50%;
+        animation: floatUp linear infinite;
+        will-change: transform, opacity;
+    }
+    @keyframes floatUp {
+        0%{transform:translate3d(0,110vh,0) scale(0);opacity:0;}
+        10%{opacity:0.8;}
+        50%{opacity:1;}
+        90%{opacity:0.3;}
+        100%{transform:translate3d(0,-50px,0) scale(0);opacity:0;}
+    }
+    
+    .light-rays { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none; overflow: hidden; contain: strict; }
+    .ray { position: absolute; top: -50%; width: 2px; height: 200%; transform-origin: top center; will-change: transform, opacity; }
+    .ray-1 { left: 20%; background: linear-gradient(180deg, transparent, rgba(99,102,241,0.08), transparent); animation: rayRotate 15s ease-in-out infinite; }
+    .ray-2 { left: 50%; background: linear-gradient(180deg, transparent, rgba(6,182,212,0.06), transparent); animation: rayRotate 20s ease-in-out infinite reverse; }
+    .ray-3 { left: 80%; background: linear-gradient(180deg, transparent, rgba(236,72,153,0.05), transparent); animation: rayRotate 18s ease-in-out infinite; }
+    @keyframes rayRotate { 0%,100%{transform:rotate(-15deg);opacity:0.3;} 50%{transform:rotate(15deg);opacity:0.8;} }
+    
+    .nebula { position: absolute; border-radius: 50%; filter: blur(120px); opacity: 0.15; will-change: transform; contain: strict; }
+    .nebula-1 { width: 800px; height: 400px; background: linear-gradient(135deg, rgba(99,102,241,0.5), rgba(6,182,212,0.3)); top: -100px; left: -200px; animation: nebulaShift1 30s ease-in-out infinite; }
+    .nebula-2 { width: 700px; height: 350px; background: linear-gradient(225deg, rgba(236,72,153,0.3), rgba(168,85,247,0.4)); bottom: -150px; right: -200px; animation: nebulaShift2 35s ease-in-out infinite; }
+    @keyframes nebulaShift1 { 0%,100%{transform:translate3d(0,0,0);} 50%{transform:translate3d(100px,30px,0);} }
+    @keyframes nebulaShift2 { 0%,100%{transform:translate3d(0,0,0);} 50%{transform:translate3d(-80px,-20px,0);} }
+    
+    .vignette { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(ellipse at center, transparent 40%, rgba(3,0,20,0.6) 100%); z-index: 4; pointer-events: none; }
+    .logo-text-glow { text-shadow: 0 0 20px rgba(99,102,241,0.3), 0 0 40px rgba(99,102,241,0.1); }
+    
+    @keyframes pulseShadow { 0%{box-shadow:0 0 0 0 rgba(255,255,255,0.3);} 70%{box-shadow:0 0 0 20px rgba(255,255,255,0);} 100%{box-shadow:0 0 0 0 rgba(255,255,255,0);} }
+    .pulse-anim { animation: pulseShadow 2.5s infinite; will-change: box-shadow; }
+    .glow-text { text-shadow: 0 0 10px rgba(255,255,255,0.5); }
+    
+    .hero-block img {
+        filter: grayscale(100%) brightness(0.7);
+        transition: filter 0.5s ease, transform 0.7s ease;
+        will-change: transform, filter;
+    }
+    .hero-block:hover img { filter: grayscale(0%) brightness(1.1) saturate(1.2); transform: scale(1.1) translateZ(0); }
+    #blocks-container.all-colored { box-shadow: 0 0 60px rgba(99,102,241,0.4), 0 0 120px rgba(99,102,241,0.1); border-color: rgba(99,102,241,0.5); }
+    #blocks-container.all-colored .hero-block img { filter: grayscale(0%) brightness(1) saturate(1.1); }
+    
+    /* ============ КАРТОЧКИ СТАТИСТИКИ ============ */
+    .stat-card {
+        position: relative; padding: 2rem 1.5rem;
+        background: linear-gradient(135deg, rgba(19,19,43,0.8) 0%, rgba(26,26,58,0.4) 100%);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(99, 102, 241, 0.15);
+        border-radius: 1.25rem; text-align: center;
+        transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+        overflow: hidden;
+        contain: layout style;
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+        border-color: rgba(99, 102, 241, 0.4);
+        box-shadow: 0 20px 40px rgba(99, 102, 241, 0.2);
+    }
+    .stat-icon {
+        width: 60px; height: 60px; border-radius: 1rem; border: 1px solid;
+        display: flex; align-items: center; justify-content: center;
+        margin: 0 auto 1rem;
+    }
+    .counter {
+        font-size: 2.5rem; font-weight: 800;
+        background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%);
+        -webkit-background-clip: text; background-clip: text; color: transparent;
+        line-height: 1;
+    }
+    
+    /* ============ КАРТОЧКИ МАНГИ ============ */
+    .manga-card, .new-card {
+        display: block;
+        transition: transform 0.3s ease;
+        will-change: transform;
+        contain: layout style;
+    }
+    .manga-card:hover { transform: translateY(-8px); }
+    .new-card:hover { transform: translateY(-5px) scale(1.02); }
+    
+    .manga-img {
+        transition: transform 0.6s ease, opacity 0.4s ease;
+        opacity: 0;
+    }
+    .manga-img.loaded { opacity: 1; }
+    .manga-card:hover .manga-img, .new-card:hover .manga-img { transform: scale(1.1); }
+    
+    /* ============ ЖАНРЫ ============ */
+    .genre-chip {
+        position: relative; padding: 0.75rem 1.5rem;
+        background: rgba(19, 19, 43, 0.6);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(99, 102, 241, 0.2);
+        border-radius: 9999px;
+        color: #cbd5e1; font-size: 0.875rem; font-weight: 500;
+        transition: color 0.3s ease, transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+        overflow: hidden;
+        contain: layout style;
+    }
+    .genre-chip::before {
+        content: ''; position: absolute; inset: 0;
+        background: linear-gradient(135deg, #6366f1, #06b6d4);
+        opacity: 0; transition: opacity 0.3s ease; z-index: 0;
+    }
+    .genre-chip:hover {
+        color: white; border-color: transparent;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(99, 102, 241, 0.4);
+    }
+    .genre-chip:hover::before { opacity: 1; }
+    
+    /* ============ FEATURES ============ */
+    .feature-card {
+        padding: 2.5rem;
+        background: linear-gradient(135deg, rgba(19,19,43,0.8) 0%, rgba(26,26,58,0.4) 100%);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(99, 102, 241, 0.15);
+        border-radius: 1.5rem;
+        transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+        contain: layout style;
+    }
+    .feature-card:hover {
+        transform: translateY(-8px);
+        border-color: rgba(6, 182, 212, 0.4);
+        box-shadow: 0 25px 50px rgba(6, 182, 212, 0.15);
+    }
+    .feature-icon {
+        width: 64px; height: 64px; border-radius: 1rem;
+        display: flex; align-items: center; justify-content: center;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    }
+    
+    /* ============ REVEAL ============ */
+    .reveal {
+        opacity: 0;
+        transform: translate3d(0, 40px, 0);
+        transition: opacity 0.8s ease, transform 0.8s ease;
+        will-change: opacity, transform;
+    }
+    .reveal.visible {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+        will-change: auto;
+    }
+    
+    .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+    
+    /* ============ АДАПТАЦИЯ ============ */
+    @media (max-width: 768px) {
+        .orb { filter: blur(60px); opacity: 0.3; }
+        .nebula { filter: blur(80px); opacity: 0.1; }
+        .ray, .nebula-2 { display: none; }
+        .grid-overlay { display: none; }
+    }
+    
+    /* ============ СЛАБЫЕ УСТРОЙСТВА ============ */
+    @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+        }
+        .orb, .nebula, .particle, .star, .ray { display: none; }
+    }
+    
+    /* ============ ОТКЛЮЧЕНИЕ АНИМАЦИЙ ПРИ СКРОЛЛЕ ============ */
+    .scrolling .orb, .scrolling .nebula, .scrolling .particle, .scrolling .star {
+        animation-play-state: paused;
+    }
+</style>
+
+<script>
+(function() {
+    'use strict';
+    
+    // ============ ОПРЕДЕЛЕНИЕ ВОЗМОЖНОСТЕЙ УСТРОЙСТВА ============
+    const isLowEndDevice = () => {
+        try {
+            const memory = navigator.deviceMemory || 4;
+            const cores = navigator.hardwareConcurrency || 4;
+            const isMobile = /Mobi|Android/i.test(navigator.userAgent);
+            return memory <= 2 || cores <= 2 || (isMobile && memory <= 4);
+        } catch(e) {
+            return false;
+        }
+    };
+    
+    const prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const lowEnd = isLowEndDevice();
+    
+    // ============ ДИНАМИЧЕСКАЯ ГЕНЕРАЦИЯ ЗВЁЗД И ЧАСТИЦ ============
+    const initBackgroundElements = () => {
+        if (prefersReducedMotion) return;
+        
+        const starsContainer = document.getElementById('stars-container');
+        const particlesContainer = document.getElementById('particles-container');
+        
+        if (!starsContainer || !particlesContainer) return;
+        
+        const starsCount = lowEnd ? 10 : 30;
+        const particlesCount = lowEnd ? 4 : 12;
+        
+        const starsFragment = document.createDocumentFragment();
+        for (let i = 0; i < starsCount; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            const size = Math.random() > 0.7 ? 3 : 2;
+            star.style.cssText = 
+                'top:' + (Math.random() * 100) + '%;' +
+                'left:' + (Math.random() * 100) + '%;' +
+                'animation-delay:' + (Math.random() * 3) + 's;' +
+                'animation-duration:' + (2 + Math.random() * 3) + 's;' +
+                'width:' + size + 'px;height:' + size + 'px;';
+            starsFragment.appendChild(star);
+        }
+        starsContainer.appendChild(starsFragment);
+        
+        const particlesFragment = document.createDocumentFragment();
+        const colors = [
+            'rgba(99,102,241,0.6)', 'rgba(6,182,212,0.5)',
+            'rgba(236,72,153,0.6)', 'rgba(168,85,247,0.5)',
+            'rgba(251,191,36,0.4)'
+        ];
+        for (let i = 0; i < particlesCount; i++) {
+            const p = document.createElement('div');
+            p.className = 'particle';
+            const size = 3 + Math.random() * 4;
+            p.style.cssText = 
+                'left:' + (Math.random() * 100) + '%;' +
+                'width:' + size + 'px;height:' + size + 'px;' +
+                'background:' + colors[i % colors.length] + ';' +
+                'animation-duration:' + (10 + Math.random() * 10) + 's;' +
+                'animation-delay:' + (Math.random() * 6) + 's;';
+            particlesFragment.appendChild(p);
+        }
+        particlesContainer.appendChild(particlesFragment);
+    };
+    
+    // ============ ПАРАЛЛАКС С THROTTLE ============
+    const initParallax = () => {
+        if (lowEnd || prefersReducedMotion) return;
+        
+        const heroSection = document.getElementById('hero-section');
+        if (!heroSection) return;
+        
+        const orbs = heroSection.querySelectorAll('.orb');
+        if (!orbs.length) return;
+        
+        let ticking = false;
+        let lastX = 0, lastY = 0;
+        
+        const updateOrbs = () => {
+            orbs.forEach((orb, i) => {
+                const speed = (i + 1) * 6;
+                orb.style.transform = 'translate3d(' + (lastX * speed) + 'px,' + (lastY * speed) + 'px,0)';
+            });
+            ticking = false;
+        };
+        
+        heroSection.addEventListener('mousemove', (e) => {
+            const rect = heroSection.getBoundingClientRect();
+            lastX = (e.clientX - rect.left) / rect.width - 0.5;
+            lastY = (e.clientY - rect.top) / rect.height - 0.5;
+            if (!ticking) {
+                requestAnimationFrame(updateOrbs);
+                ticking = true;
+            }
+        }, { passive: true });
+        
+        heroSection.addEventListener('mouseleave', () => {
+            orbs.forEach(orb => orb.style.transform = '');
+        }, { passive: true });
+    };
+    
+    // ============ INTERSECTION OBSERVER ДЛЯ REVEAL ============
+    const initRevealAnimations = () => {
+        const elements = document.querySelectorAll('.reveal');
+        if (!elements.length) return;
+        
+        if (!('IntersectionObserver' in window)) {
+            elements.forEach(el => el.classList.add('visible'));
+            return;
+        }
+        
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { 
+            threshold: 0.1,
+            rootMargin: '50px'
+        });
+        
+        elements.forEach(el => observer.observe(el));
+    };
+    
+    // ============ АНИМАЦИЯ СЧЁТЧИКОВ ============
+    const initCounters = () => {
+        const counters = document.querySelectorAll('.counter');
+        if (!counters.length) return;
+        
+        const animateCounter = (counter) => {
+            const target = parseInt(counter.dataset.target, 10) || 0;
+            if (target === 0) {
+                counter.textContent = '0';
+                return;
+            }
+            
+            const duration = 1500;
+            const start = performance.now();
+            
+            const update = (now) => {
+                const elapsed = now - start;
+                const progress = Math.min(elapsed / duration, 1);
+                const eased = 1 - Math.pow(1 - progress, 4);
+                const current = Math.floor(target * eased);
+                counter.textContent = current.toLocaleString('ru');
+                
+                if (progress < 1) {
+                    requestAnimationFrame(update);
+                } else {
+                    counter.textContent = target.toLocaleString('ru');
+                }
+            };
+            requestAnimationFrame(update);
+        };
+        
+        if (!('IntersectionObserver' in window)) {
+            counters.forEach(animateCounter);
+            return;
+        }
+        
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    animateCounter(entry.target);
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.5 });
+        
+        counters.forEach(c => observer.observe(c));
+    };
+    
+    // ============ LAZY LOAD IMAGES С FADE-IN ============
+    const initLazyImages = () => {
+        const images = document.querySelectorAll('.manga-img');
+        images.forEach(img => {
+            if (img.complete && img.naturalHeight !== 0) {
+                img.classList.add('loaded');
+            } else {
+                img.addEventListener('load', () => img.classList.add('loaded'), { once: true });
+                img.addEventListener('error', () => img.classList.add('loaded'), { once: true });
+            }
+        });
+    };
+    
+    // ============ ПАУЗА АНИМАЦИЙ ПРИ СКРОЛЛЕ ============
+    const initScrollPause = () => {
+        if (lowEnd) return;
+        
+        let scrollTimer = null;
+        const heroSection = document.getElementById('hero-section');
+        if (!heroSection) return;
+        
+        window.addEventListener('scroll', () => {
+            if (!heroSection.classList.contains('scrolling')) {
+                heroSection.classList.add('scrolling');
+            }
+            clearTimeout(scrollTimer);
+            scrollTimer = setTimeout(() => {
+                heroSection.classList.remove('scrolling');
+            }, 150);
+        }, { passive: true });
+    };
+    
+    // ============ ПАУЗА АНИМАЦИЙ ВНЕ ВИДИМОСТИ ============
+    const initVisibilityPause = () => {
+        const heroSection = document.getElementById('hero-section');
+        if (!heroSection) return;
+        
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                heroSection.classList.add('scrolling');
+            } else {
+                heroSection.classList.remove('scrolling');
+            }
+        });
+        
+        if ('IntersectionObserver' in window) {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        heroSection.classList.remove('scrolling');
+                    } else {
+                        heroSection.classList.add('scrolling');
+                    }
+                });
+            }, { threshold: 0 });
+            observer.observe(heroSection);
+        }
+    };
+    
+    // ============ PREFETCH ССЫЛОК НА HOVER ============
+    const initLinkPrefetch = () => {
+        if (lowEnd) return;
+        
+        const prefetched = new Set();
+        document.addEventListener('mouseover', (e) => {
+            const link = e.target.closest('a[href]');
+            if (!link) return;
+            const href = link.href;
+            if (prefetched.has(href) || !href.startsWith(window.location.origin)) return;
+            
+            try {
+                const linkEl = document.createElement('link');
+                linkEl.rel = 'prefetch';
+                linkEl.href = href;
+                document.head.appendChild(linkEl);
+                prefetched.add(href);
+            } catch(e) {}
+        }, { passive: true });
+    };
+    
+    // ============ ИНИЦИАЛИЗАЦИЯ ============
+    const init = () => {
+        try {
+            initBackgroundElements();
+            initRevealAnimations();
+            initCounters();
+            initLazyImages();
+        } catch(e) {
+            console.error('Init error:', e);
+        }
+        
+        if ('requestIdleCallback' in window) {
+            requestIdleCallback(() => {
+                try {
+                    initParallax();
+                    initScrollPause();
+                    initVisibilityPause();
+                    initLinkPrefetch();
+                } catch(e) {
+                    console.error('Lazy init error:', e);
+                }
+            }, { timeout: 2000 });
+        } else {
+            setTimeout(() => {
+                try {
+                    initParallax();
+                    initScrollPause();
+                    initVisibilityPause();
+                    initLinkPrefetch();
+                } catch(e) {
+                    console.error('Lazy init error:', e);
+                }
+            }, 1000);
+        }
+    };
+    
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+})();
+</script>
+{% endblock %}

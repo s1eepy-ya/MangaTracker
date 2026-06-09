@@ -1,0 +1,288 @@
+{% extends "base.html" %}
+
+{% block title %}Добавить главу — {{ manga.title }}{% endblock %}
+
+{% block content %}
+<!-- Фоновые эффекты -->
+<div class="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
+    <div class="absolute top-0 left-1/4 w-[500px] h-[500px] bg-indigo-600/10 rounded-full blur-[120px]"></div>
+    <div class="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-cyan-600/10 rounded-full blur-[120px]"></div>
+</div>
+
+<div class="container mx-auto px-4 py-12 max-w-4xl">
+
+    <!-- Хлебные крошки -->
+    <nav class="flex items-center gap-2 text-sm text-gray-400 mb-6">
+        <a href="{{ url_for('manga_detail', manga_id=manga.id) }}" class="hover:text-cyan-400 transition">{{ manga.title }}</a>
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+        </svg>
+        <span class="text-white">Новая глава</span>
+    </nav>
+
+    <div class="bg-cardBg/80 backdrop-blur-md border border-borderDark rounded-3xl shadow-2xl p-6 md:p-10">
+
+        <!-- Заголовок -->
+        <div class="flex items-start gap-4 mb-8">
+            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-indigo-500/30 flex-shrink-0">
+                <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+            </div>
+            <div class="flex-1">
+                <h1 class="text-3xl md:text-4xl font-black font-display text-white mb-1">Новая глава</h1>
+                <p class="text-gray-400">
+                    Манга: <span class="text-white font-semibold">{{ manga.title }}</span>
+                    <span class="mx-2 text-gray-600">•</span>
+                    Команда: <span class="text-cyan-400 font-semibold">{{ team.name }}</span>
+                </p>
+            </div>
+        </div>
+
+        <form method="POST" enctype="multipart/form-data" id="chapter-form" class="space-y-6">
+
+            <!-- Том + Номер + Название -->
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+                <div class="md:col-span-2">
+                    <label class="block text-xs text-gray-500 uppercase tracking-wider mb-2 font-semibold">Том</label>
+                    <input type="number" name="volume" value="1" min="1" required
+                           class="w-full px-4 py-3 bg-darkBg border-2 border-borderDark hover:border-indigo-500/50 focus:border-indigo-500 rounded-xl text-white focus:outline-none transition">
+                </div>
+
+                <div class="md:col-span-3">
+                    <label class="block text-xs text-gray-500 uppercase tracking-wider mb-2 font-semibold">
+                        Номер главы <span class="text-rose-400">*</span>
+                    </label>
+                    <input type="text" name="number" placeholder="12 или 12.5" required
+                           class="w-full px-4 py-3 bg-darkBg border-2 border-borderDark hover:border-indigo-500/50 focus:border-indigo-500 rounded-xl text-white focus:outline-none transition">
+                </div>
+
+                <div class="md:col-span-7">
+                    <label class="block text-xs text-gray-500 uppercase tracking-wider mb-2 font-semibold">Название главы (необязательно)</label>
+                    <input type="text" name="title" maxlength="200" placeholder="Например: Начало пути"
+                           class="w-full px-4 py-3 bg-darkBg border-2 border-borderDark hover:border-indigo-500/50 focus:border-indigo-500 rounded-xl text-white focus:outline-none transition">
+                </div>
+            </div>
+
+            <!-- Загрузка фреймов -->
+            <div>
+                <label class="block text-xs text-gray-500 uppercase tracking-wider mb-2 font-semibold">
+                    Фреймы (изображения) <span class="text-rose-400">*</span>
+                </label>
+
+                <!-- Drag & Drop зона -->
+                <label for="frames"
+                       id="dropZone"
+                       class="block relative w-full p-8 bg-darkBg border-2 border-dashed border-borderDark hover:border-indigo-500/60 rounded-2xl cursor-pointer transition-all group">
+                    <div class="flex flex-col items-center justify-center text-center">
+                        <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-cyan-500/20 border border-indigo-500/30 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                            <svg class="w-8 h-8 text-indigo-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                            </svg>
+                        </div>
+                        <p class="text-white font-bold text-lg mb-1">Перетащи файлы сюда или нажми, чтобы выбрать</p>
+                        <p class="text-sm text-gray-500">JPG, PNG, WEBP, GIF • Можно сразу много файлов</p>
+                        <p class="text-xs text-gray-600 mt-2">⚠ Порядок выбора = порядок отображения в читалке</p>
+                    </div>
+                    <input type="file" name="frames" id="frames" accept="image/*" multiple required class="hidden">
+                </label>
+
+                <!-- Счётчик -->
+                <div id="filesInfo" class="hidden mt-3 flex items-center justify-between px-4 py-2 bg-indigo-500/10 border border-indigo-500/30 rounded-lg">
+                    <span class="text-sm text-indigo-200">
+                        <span id="filesCount">0</span> файлов выбрано
+                        <span class="text-gray-500">•</span>
+                        <span id="filesSize">0 MB</span>
+                    </span>
+                    <button type="button" id="clearFiles"
+                            class="text-xs text-rose-400 hover:text-rose-300 font-semibold transition">
+                        Очистить
+                    </button>
+                </div>
+            </div>
+
+            <!-- Предпросмотр -->
+            <div id="preview" class="hidden">
+                <h3 class="text-sm text-gray-400 font-semibold mb-3 flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                    </svg>
+                    Предпросмотр (порядок страниц)
+                </h3>
+                <div id="previewList" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 max-h-[500px] overflow-y-auto p-2 bg-darkBg/50 rounded-xl border border-borderDark"></div>
+            </div>
+
+            <!-- Прогресс загрузки -->
+            <div id="uploadProgress" class="hidden">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm text-gray-400">Загрузка...</span>
+                    <span id="progressPercent" class="text-sm text-cyan-400 font-bold">0%</span>
+                </div>
+                <div class="w-full h-2 bg-darkBg border border-borderDark rounded-full overflow-hidden">
+                    <div id="progressBar" class="h-full bg-gradient-to-r from-indigo-500 to-cyan-500 transition-all" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <!-- Кнопки -->
+            <div class="flex flex-col sm:flex-row gap-3 pt-4 border-t border-borderDark">
+                <button type="submit" id="submitBtn"
+                        class="flex-1 px-6 py-3 bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 hover:scale-[1.02] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                    </svg>
+                    Загрузить главу
+                </button>
+
+                <a href="{{ url_for('manga_detail', manga_id=manga.id) }}"
+                   class="sm:w-auto px-6 py-3 bg-darkBg border border-borderDark hover:border-rose-500/50 text-gray-300 hover:text-rose-300 font-semibold rounded-xl text-center transition">
+                    Отмена
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+(function() {
+    'use strict';
+
+    const input = document.getElementById('frames');
+    const dropZone = document.getElementById('dropZone');
+    const preview = document.getElementById('preview');
+    const previewList = document.getElementById('previewList');
+    const filesInfo = document.getElementById('filesInfo');
+    const filesCount = document.getElementById('filesCount');
+    const filesSize = document.getElementById('filesSize');
+    const clearBtn = document.getElementById('clearFiles');
+    const form = document.getElementById('chapter-form');
+    const submitBtn = document.getElementById('submitBtn');
+    const progressBlock = document.getElementById('uploadProgress');
+    const progressBar = document.getElementById('progressBar');
+    const progressPercent = document.getElementById('progressPercent');
+
+    function formatSize(bytes) {
+        return (bytes / 1024 / 1024).toFixed(2) + ' MB';
+    }
+
+    function renderPreview() {
+        const files = [...input.files];
+        previewList.innerHTML = '';
+
+        if (files.length === 0) {
+            preview.classList.add('hidden');
+            filesInfo.classList.add('hidden');
+            return;
+        }
+
+        preview.classList.remove('hidden');
+        filesInfo.classList.remove('hidden');
+
+        let totalSize = 0;
+        files.forEach((file, i) => {
+            totalSize += file.size;
+            const url = URL.createObjectURL(file);
+            const card = document.createElement('div');
+            card.className = 'relative group bg-cardBg border border-borderDark rounded-lg overflow-hidden hover:border-cyan-500/50 transition';
+            card.innerHTML = `
+                <div class="absolute top-1 left-1 z-10 px-2 py-0.5 bg-indigo-600/90 text-white text-xs font-bold rounded">
+                    #${i + 1}
+                </div>
+                <img src="${url}" class="w-full h-32 object-cover" alt="Frame ${i + 1}">
+                <div class="p-2">
+                    <p class="text-xs text-gray-400 truncate" title="${file.name}">${file.name}</p>
+                    <p class="text-xs text-gray-600">${formatSize(file.size)}</p>
+                </div>
+            `;
+            previewList.appendChild(card);
+        });
+
+        filesCount.textContent = files.length;
+        filesSize.textContent = formatSize(totalSize);
+    }
+
+    input.addEventListener('change', renderPreview);
+
+    clearBtn.addEventListener('click', () => {
+        input.value = '';
+        renderPreview();
+    });
+
+    // Drag & Drop
+    ['dragenter', 'dragover'].forEach(ev => {
+        dropZone.addEventListener(ev, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropZone.classList.add('border-cyan-500', 'bg-cyan-500/5');
+        });
+    });
+
+    ['dragleave', 'drop'].forEach(ev => {
+        dropZone.addEventListener(ev, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropZone.classList.remove('border-cyan-500', 'bg-cyan-500/5');
+        });
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+        const dt = new DataTransfer();
+        // Сохраняем уже выбранные файлы
+        [...input.files].forEach(f => dt.items.add(f));
+        // Добавляем перетащенные
+        [...e.dataTransfer.files].forEach(f => {
+            if (f.type.startsWith('image/')) dt.items.add(f);
+        });
+        input.files = dt.files;
+        renderPreview();
+    });
+
+    // Загрузка с прогрессом через XHR
+    form.addEventListener('submit', (e) => {
+        if (input.files.length === 0) {
+            e.preventDefault();
+            alert('Выбери хотя бы один файл!');
+            return;
+        }
+
+        e.preventDefault();
+
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Загрузка...';
+        progressBlock.classList.remove('hidden');
+
+        const xhr = new XMLHttpRequest();
+        const formData = new FormData(form);
+
+        xhr.upload.addEventListener('progress', (ev) => {
+            if (ev.lengthComputable) {
+                const pct = Math.round((ev.loaded / ev.total) * 100);
+                progressBar.style.width = pct + '%';
+                progressPercent.textContent = pct + '%';
+            }
+        });
+
+        xhr.addEventListener('load', () => {
+            if (xhr.status === 200 || xhr.status === 302) {
+                // Сервер вернул редирект — переходим
+                window.location.href = xhr.responseURL || "{{ url_for('manga_detail', manga_id=manga.id) }}";
+            } else {
+                alert('Ошибка загрузки: ' + xhr.status);
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '📤 Загрузить главу';
+                progressBlock.classList.add('hidden');
+            }
+        });
+
+        xhr.addEventListener('error', () => {
+            alert('Сетевая ошибка при загрузке');
+            submitBtn.disabled = false;
+            progressBlock.classList.add('hidden');
+        });
+
+        xhr.open('POST', form.action || window.location.href);
+        xhr.send(formData);
+    });
+})();
+</script>
+{% endblock %}

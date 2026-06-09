@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mx-auto px-4 py-12 max-w-3xl">
+    <h1 class="text-3xl font-black font-display text-white mb-6">Редактирование команды</h1>
+    <form method="POST" enctype="multipart/form-data" class="space-y-4 bg-cardBg/80 border border-borderDark rounded-2xl p-6">
+        <div>
+            <label class="block text-sm font-semibold text-gray-300 mb-2">Краткое описание</label>
+            <input type="text" name="short_description" value="{{ team.short_description or '' }}" class="w-full px-4 py-3 bg-darkBg border border-borderDark rounded-xl text-white">
+        </div>
+        <div>
+            <label class="block text-sm font-semibold text-gray-300 mb-2">Полное описание</label>
+            <textarea name="full_description" rows="5" class="w-full px-4 py-3 bg-darkBg border border-borderDark rounded-xl text-white">{{ team.full_description or '' }}</textarea>
+        </div>
+        <div>
+            <label class="block text-sm font-semibold text-gray-300 mb-2">Языки</label>
+            <input type="text" name="languages" value="{{ team.languages or '' }}" class="w-full px-4 py-3 bg-darkBg border border-borderDark rounded-xl text-white">
+        </div>
+        <div>
+            <label class="block text-sm font-semibold text-gray-300 mb-2">Требуемые роли</label>
+            <input type="text" name="required_roles" value="{{ team.required_roles or '' }}" class="w-full px-4 py-3 bg-darkBg border border-borderDark rounded-xl text-white">
+        </div>
+        <div>
+            <label class="block text-sm font-semibold text-gray-300 mb-2">Текст набора</label>
+            <textarea name="recruitment_text" rows="3" class="w-full px-4 py-3 bg-darkBg border border-borderDark rounded-xl text-white">{{ team.recruitment_text or '' }}</textarea>
+        </div>
+        <div>
+            <label class="flex items-center gap-2 text-gray-300">
+                <input type="checkbox" name="is_recruiting" {% if team.is_recruiting %}checked{% endif %}>
+                <span>Открыт набор</span>
+            </label>
+        </div>
+        <div>
+            <label class="block text-sm font-semibold text-gray-300 mb-2">Логотип</label>
+            <input type="file" name="logo" accept="image/*" class="w-full text-xs text-gray-400 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-indigo-600 file:text-white">
+        </div>
+        <div>
+            <label class="block text-sm font-semibold text-gray-300 mb-2">Баннер</label>
+            <input type="file" name="banner" accept="image/*" class="w-full text-xs text-gray-400 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-indigo-600 file:text-white">
+        </div>
+        <button type="submit" class="w-full py-3 bg-gradient-to-r from-indigo-600 to-cyan-600 text-white font-bold rounded-xl">Сохранить</button>
+    </form>
+</div>
+{% endblock %}

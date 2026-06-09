@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+{% block title %}{{ team.name }} — Команды{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8 max-w-6xl">
+    <!-- Баннер -->
+    <div class="relative h-48 md:h-64 rounded-3xl overflow-hidden bg-gradient-to-br from-indigo-900 via-purple-900 to-cyan-900 mb-0">
+        {% if team.banner %}
+        <img src="{{ team.banner }}" alt="" class="w-full h-full object-cover" onerror="this.style.display='none'">
+        {% endif %}
+        <div class="absolute inset-0 bg-gradient-to-t from-darkBg via-darkBg/50 to-transparent"></div>
+    </div>
+    
+    <!-- Шапка команды -->
+    <div class="bg-cardBg/80 border border-borderDark rounded-3xl p-6 md:p-8 -mt-20 relative z-10 mb-8">
+        <div class="flex flex-col md:flex-row gap-6 items-start">
+            <div class="w-28 h-28 rounded-2xl bg-gradient-to-br from-indigo-500 to-cyan-500 border-4 border-cardBg shadow-xl flex items-center justify-center overflow-hidden flex-shrink-0">
+                {% if team.logo %}
+                <img src="{{ team.logo }}" alt="{{ team.name }}" class="w-full h-full object-cover">
+                {% else %}
+                <span class="text-white text-5xl font-black">{{ team.name[0]|upper }}</span>
+                {% endif %}
+            </div>
+            
+            <div class="flex-1">
+                <div class="flex items-start justify-between flex-wrap gap-3 mb-2">
+                    <h1 class="text-3xl md:text-4xl font-black font-display text-white">{{ team.name }}</h1>
+                    {% if is_owner %}
+                    <a href="{{ url_for('team_edit', slug=team.slug) }}" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold rounded-lg transition flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                        Редактировать
+                    </a>
+                    {% endif %}
+                </div>
+                <p class="text-gray-400 mb-3">{{ team.short_description }}</p>
+                
+                <div class="flex flex-wrap gap-2 mb-3">
+                    {% for lang in team.languages.split(',') %}
+                    <span class="px-3 py-1 bg-cyan-500/15 border border-cyan-500/30 text-cyan-300 text-xs font-semibold rounded-lg">{{ lang.strip() }}</span>
+                    {% endfor %}
+                </div>
+                
+                <div class="flex flex-wrap items-center gap-4 text-sm text-gray-400">
+                    <span class="flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857"/></svg>
+                        {{ members|length }} участников
+                    </span>
+                    <span class="flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13"/></svg>
+                        {{ team.projects|length }} проектов
+                    </span>
+                    {% if team.is_recruiting %}
+                    <span class="px-2 py-1 bg-emerald-500/20 text-emerald-300 text-xs font-bold rounded">✅ Набор открыт</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Левая колонка: Описание и Проекты -->
+        <div class="lg:col-span-2 space-y-6">
+            <div class="bg-cardBg/80 border border-borderDark rounded-2xl p-6">
+                <h2 class="text-xl font-bold font-display text-white mb-4 flex items-center gap-2">
+                    <div class="w-1 h-6 bg-gradient-to-b from-indigo-500 to-cyan-500 rounded-full"></div>
+                    О команде
+                </h2>
+                <p class="text-gray-300 leading-relaxed whitespace-pre-line">{{ team.full_description }}</p>
+            </div>
+
+            {% if team.is_recruiting and team.required_roles %}
+            <div class="bg-gradient-to-br from-emerald-500/10 to-cyan-500/10 border border-emerald-500/30 rounded-2xl p-6">
+                <h2 class="text-xl font-bold font-display text-white mb-3 flex items-center gap-2">
+                    <span>📢</span> Идёт набор
+                </h2>
+                <p class="text-gray-300 mb-3">Требуемые роли:</p>
+                <div class="flex flex-wrap gap-2">
+                    {% for role in team.required_roles.split(',') %}
+                    <span class="px-3 py-1.5 bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-sm font-semibold rounded-lg">{{ role.strip() }}</span>
+                    {% endfor %}
+                </div>
+                {% if team.recruitment_text %}
+                <p class="text-gray-300 mt-4 whitespace-pre-line">{{ team.recruitment_text }}</p>
+                {% endif %}
+            </div>
+            {% endif %}
+            
+            <!-- ============ ПРОЕКТЫ ============ -->
+            <div class="bg-cardBg/80 border border-borderDark rounded-2xl p-6">
+                <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+                    <h2 class="text-xl font-bold font-display text-white flex items-center gap-2">
+                        <div class="w-1 h-6 bg-gradient-to-b from-pink to-amber-400 rounded-full"></div>
+                        Проекты ({{ team.projects|length }})
+                    </h2>
+                    {% if is_owner or is_member %}
+                    <a href="{{ url_for('team_add_project', slug=team.slug) }}" class="px-4 py-2 bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 text-white text-sm font-semibold rounded-lg transition shadow-lg shadow-indigo-500/20 flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                        Добавить
+                    </a>
+                    {% endif %}
+                </div>
+                
+                {% if team.projects %}
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                    {% for manga in team.projects %}
+                    <div class="relative group">
+                        <a href="{{ url_for('manga_detail', manga_id=manga.id) }}" class="block">
+                            <div class="aspect-[2/3] rounded-lg overflow-hidden bg-darkBg">
+                                {% if manga.cover_image %}
+                                <img src="{{ manga.cover_image }}" 
+                                     alt="{{ manga.title }}" 
+                                     loading="lazy"
+                                     onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 150%22><rect fill=%22%23312e81%22 width=%22100%22 height=%22150%22/></svg>';"
+                                     class="w-full h-full object-cover group-hover:scale-110 transition">
+                                {% else %}
+                                <div class="w-full h-full bg-gradient-to-br from-indigo-900 to-cyan-900"></div>
+                                {% endif %}
+                            </div>
+                            <h3 class="text-xs text-white mt-2 line-clamp-2 group-hover:text-cyan-400 transition">{{ manga.title }}</h3>
+                        </a>
+                        
+                        {% if is_owner %}
+                        <form method="POST" action="{{ url_for('team_remove_project', slug=team.slug, manga_id=manga.id) }}" 
+                              onsubmit="return confirm('Удалить {{ manga.title|e }} из проектов команды?')"
+                              class="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition">
+                            <button type="submit" class="w-7 h-7 bg-rose-600 hover:bg-rose-500 text-white rounded-lg flex items-center justify-center shadow-lg" title="Удалить из проектов">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-10">
+                    <svg class="w-16 h-16 text-gray-600 mx-auto mb-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                    </svg>
+                    <p class="text-gray-500 mb-4">У команды пока нет проектов</p>
+                    {% if is_owner or is_member %}
+                    <a href="{{ url_for('team_add_project', slug=team.slug) }}" class="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 text-white text-sm font-semibold rounded-lg transition shadow-lg shadow-indigo-500/20">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                        Добавить первый проект
+                    </a>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Правая колонка: Участники + Приглашение -->
+        <div class="space-y-6">
+            <div class="bg-cardBg/80 border border-borderDark rounded-2xl p-6">
+                <h2 class="text-xl font-bold font-display text-white mb-4 flex items-center gap-2">
+                    <div class="w-1 h-6 bg-gradient-to-b from-cyan-500 to-emerald-500 rounded-full"></div>
+                    Участники ({{ members|length }})
+                </h2>
+                <div class="space-y-3">
+                    {% for member in members %}
+                    <div class="flex items-center gap-3 p-3 bg-darkBg rounded-xl">
+                        <a href="{{ url_for('profile', username=member.user.username) }}" class="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-cyan-500 flex items-center justify-center text-white font-bold overflow-hidden flex-shrink-0">
+                            {% if member.user.avatar %}
+                            <img src="{{ member.user.avatar }}" alt="" class="w-full h-full object-cover">
+                            {% else %}
+                            {{ member.user.username[0]|upper }}
+                            {% endif %}
+                        </a>
+                        <div class="flex-1 min-w-0">
+                            <a href="{{ url_for('profile', username=member.user.username) }}" class="block text-white font-semibold hover:text-cyan-400 transition truncate">{{ member.user.username }}</a>
+                            <p class="text-xs {% if member.role == 'OWNER' %}text-amber-400{% else %}text-gray-400{% endif %}">
+                                {% if member.role == 'OWNER' %}👑 Владелец
+                                {% elif member.role == 'ADMIN' %}🛡 Админ
+                                {% else %}{{ member.role_label or member.role }}{% endif %}
+                            </p>
+                        </div>
+                        {% if is_owner and member.role != 'OWNER' %}
+                        <form method="POST" action="{{ url_for('team_remove_member', slug=team.slug, member_id=member.id) }}" onsubmit="return confirm('Удалить участника?')">
+                            <button type="submit" class="text-rose-400 hover:text-rose-300 p-1" title="Удалить">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            {% if is_owner %}
+            <div class="bg-cardBg/80 border border-borderDark rounded-2xl p-6">
+                <h2 class="text-lg font-bold font-display text-white mb-4">✉️ Пригласить</h2>
+                <form method="POST" action="{{ url_for('team_invite', slug=team.slug) }}" class="space-y-3">
+                    <input type="text" name="username" required placeholder="Имя пользователя"
+                           class="w-full px-3 py-2 bg-darkBg border border-borderDark rounded-lg text-white text-sm focus:border-primary focus:outline-none">
+                    <input type="text" name="role" placeholder="Роль (например: Переводчик)"
+                           class="w-full px-3 py-2 bg-darkBg border border-borderDark rounded-lg text-white text-sm focus:border-primary focus:outline-none">
+                    <textarea name="message" rows="2" placeholder="Сообщение (необязательно)"
+                              class="w-full px-3 py-2 bg-darkBg border border-borderDark rounded-lg text-white text-sm focus:border-primary focus:outline-none resize-y"></textarea>
+                    <button type="submit" class="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold rounded-lg transition">
+                        Отправить приглашение
+                    </button>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+    .line-clamp-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+</style>
+{% endblock %}

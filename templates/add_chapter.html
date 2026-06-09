@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container" style="max-width:760px;margin:30px auto;">
+  <h1>Добавить главу</h1>
+  <p>Манга: <b>{{ manga.title }}</b> • Команда: <b>{{ team.name }}</b></p>
+
+  <form method="POST" enctype="multipart/form-data" id="chapter-form">
+    <div class="row" style="display:flex;gap:12px;flex-wrap:wrap;">
+      <label style="flex:1;min-width:140px;">
+        Том
+        <input type="number" name="volume" value="1" min="1" required>
+      </label>
+      <label style="flex:1;min-width:140px;">
+        Номер главы *
+        <input type="text" name="number" placeholder="напр. 12 или 12.5" required>
+      </label>
+    </div>
+
+    <label>Название главы (необязательно)
+      <input type="text" name="title" maxlength="200">
+    </label>
+
+    <label style="display:block;margin-top:16px;">
+      Фреймы (изображения) — можно выбрать сразу несколько,
+      порядок = порядок выбора
+      <input type="file" name="frames" id="frames" accept="image/*"
+             multiple required>
+    </label>
+
+    <div id="preview" style="margin-top:14px;display:flex;flex-direction:column;gap:6px;"></div>
+
+    <button type="submit" style="margin-top:16px;">Загрузить главу</button>
+  </form>
+</div>
+
+<script>
+  const input   = document.getElementById('frames');
+  const preview = document.getElementById('preview');
+
+  input.addEventListener('change', () => {
+    preview.innerHTML = '';
+    [...input.files].forEach((file, i) => {
+      const url = URL.createObjectURL(file);
+      const wrap = document.createElement('div');
+      wrap.style.cssText = 'border:1px solid #ddd;padding:6px;border-radius:6px;';
+      wrap.innerHTML = `
+        <div style="font-size:12px;color:#666;margin-bottom:4px;">
+          #${i+1} — ${file.name} (${(file.size/1024/1024).toFixed(2)} MB)
+        </div>
+        <img src="${url}" style="max-width:100%;display:block;">`;
+      preview.appendChild(wrap);
+    });
+  });
+</script>
+{% endblock %}

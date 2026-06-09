@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}Профиль {{ user.username }} | MangaTracker{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <!-- Profile Banner & Info Header -->
+    <div class="bg-cardBg rounded-3xl border border-gray-800 overflow-hidden shadow-2xl mb-8">
+        <!-- Banner -->
+        <div class="h-48 md:h-64 bg-gradient-to-r from-blue-600 to-indigo-700 relative">
+            {% if user.banner %}
+                <img src="{{ user.banner }}" class="w-full h-full object-cover" alt="Banner">
+            {% endif %}
+        </div>
+        
+        <!-- User Info Info Header -->
+        <div class="p-6 md:p-10 -mt-16 flex flex-col md:flex-row gap-6 items-start md:items-end">
+            <!-- Avatar -->
+            <div class="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-cardBg bg-gray-800 overflow-hidden shadow-xl shrink-0 z-10">
+                {% if user.avatar %}
+                    <img src="{{ user.avatar }}" class="w-full h-full object-cover" alt="Avatar">
+                {% else %}
+                    <div class="w-full h-full bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center text-4xl font-extrabold text-white">
+                        {{ user.username[0]|upper }}
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Title & Actions -->
+            <div class="flex-grow z-10">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <h1 class="text-3xl font-extrabold text-white flex items-center gap-2">
+                            {{ user.username }}
+                            <span class="px-2 py-0.5 bg-primary/20 text-primary border border-primary/20 rounded text-xs font-semibold uppercase">
+                                {{ user.role }}
+                            </span>
+                        </h1>
+                        <p class="text-sm text-gray-400 mt-1">В клубе с {{ user.created_at.strftime('%d.%m.%Y') }}</p>
+                    </div>
+                    {% if current_user.is_authenticated and current_user.id == user.id %}
+                        <a href="{{ url_for('settings') }}" class="px-5 py-2.5 bg-gray-800 hover:bg-gray-700 border border-gray-750 text-white font-semibold rounded-xl text-sm transition text-center">
+                            Настройки профиля
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics & Bio Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <!-- Bio and Info (Left) -->
+        <div class="md:col-span-1 space-y-6">
+            <div class="bg-cardBg p-6 rounded-2xl border border-gray-800 shadow-xl">
+                <h3 class="text-lg font-bold text-white mb-4">О себе</h3>
+                <p class="text-gray-300 text-sm leading-relaxed whitespace-pre-line">
+                    {{ user.bio or 'Пользователь еще ничего не рассказал о себе.' }}
+                </p>
+            </div>
+        </div>
+
+        <!-- Library Stats (Right) -->
+        <div class="md:col-span-2 space-y-6">
+            <div class="bg-cardBg p-6 rounded-2xl border border-gray-800 shadow-xl">
+                <h3 class="text-lg font-bold text-white mb-6">Статистика библиотеки</h3>
+                
+                <!-- Circular/Linear Stat Grid -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-6">
+                    <div class="bg-darkBg/50 p-4 rounded-xl text-center border border-gray-850">
+                        <span class="block text-2xl font-black text-white">{{ stats.total }}</span>
+                        <span class="text-xs text-gray-500">Всего тайтлов</span>
+                    </div>
+                    <div class="bg-darkBg/50 p-4 rounded-xl text-center border border-gray-850">
+                        <span class="block text-2xl font-black text-emerald-500">{{ stats.reading }}</span>
+                        <span class="text-xs text-gray-500">Читает</span>
+                    </div>
+                    <div class="bg-darkBg/50 p-4 rounded-xl text-center border border-gray-850">
+                        <span class="block text-2xl font-black text-blue-500">{{ stats.completed }}</span>
+                        <span class="text-xs text-gray-500">Прочитано</span>
+                    </div>
+                    <div class="bg-darkBg/50 p-4 rounded-xl text-center border border-gray-850">
+                        <span class="block text-2xl font-black text-primary">{{ stats.chapters }}</span>
+                        <span class="text-xs text-gray-500">Всего глав</span>
+                    </div>
+                </div>
+
+                <!-- Status Progress bar -->
+                <div class="mt-8">
+                    <h4 class="text-sm font-semibold text-gray-400 mb-3">Прогресс по категориям</h4>
+                    <div class="h-3 w-full bg-darkBg rounded-full overflow-hidden flex">
+                        {% if stats.total > 0 %}
+                            <div class="bg-emerald-500 h-full" style="width: {{ (stats.reading / stats.total) * 100 }}%" title="Читаю"></div>
+                            <div class="bg-blue-500 h-full" style="width: {{ (stats.completed / stats.total) * 100 }}%" title="Прочитано"></div>
+                            <div class="bg-yellow-500 h-full" style="width: {{ (stats.plan_to_read / stats.total) * 100 }}%" title="В планах"></div>
+                            <div class="bg-gray-600 h-full" style="width: {{ ((stats.on_hold + stats.dropped) / stats.total) * 100 }}%" title="Другое"></div>
+                        {% else %}
+                            <div class="bg-gray-800 w-full h-full"></div>
+                        {% endif %}
+                    </div>
+                    <div class="flex flex-wrap gap-4 mt-4 text-xs text-gray-400">
+                        <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Читаю ({{ stats.reading }})</span>
+                        <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span> Прочитано ({{ stats.completed }})</span>
+                        <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-yellow-500"></span> В планах ({{ stats.plan_to_read }})</span>
+                        <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-gray-600"></span> Отложено/Брошено ({{ stats.on_hold + stats.dropped }})</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
