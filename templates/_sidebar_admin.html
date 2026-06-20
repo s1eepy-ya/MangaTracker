@@ -1,0 +1,394 @@
+<!-- ========== БОКОВАЯ ПАНЕЛЬ АДМИНА/МОДЕРАТОРА ========== -->
+<aside class="admin-sidebar" id="adminSidebar">
+    <div class="admin-sidebar-inner">
+        
+        <!-- Шапка панели -->
+        <div class="sidebar-header">
+            {% if is_admin %}
+                <div class="sidebar-badge admin-badge">
+                    <img src="{{ url_for('static', filename='img/icons/icon_shield_1781697372155.png') }}" class="w-5 h-5 drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]" alt="Admin">
+                    <span class="badge-text">АДМИН</span>
+                </div>
+            {% elif is_moderator %}
+                <div class="sidebar-badge mod-badge">
+                    <img src="{{ url_for('static', filename='img/icons/icon_shield_1781697372155.png') }}" class="w-5 h-5 drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]" alt="Mod">
+                    <span class="badge-text">МОДЕРАТОР</span>
+                </div>
+            {% endif %}
+            <p class="sidebar-username">{{ current_user.username }}</p>
+        </div>
+
+        <!-- МОДЕРАЦИЯ -->
+        <div class="sidebar-section">
+            <h3 class="sidebar-title">
+                <img src="{{ url_for('static', filename='img/icons/icon_shield_1781697372155.png') }}" class="w-5 h-5 opacity-80" alt="">
+                Модерация
+            </h3>
+            <nav class="sidebar-nav">
+                <a href="{{ url_for('moderation_panel') }}" 
+                   class="sidebar-link {% if request.endpoint == 'moderation_panel' %}active{% endif %}">
+                    <img src="{{ url_for('static', filename='img/icons/icon_library_1781697706908.png') }}" class="link-icon w-5 h-5 object-contain" alt="">
+                    <span class="link-text">Панель</span>
+                </a>
+                <a href="{{ url_for('mod_users_list') }}" 
+                   class="sidebar-link {% if request.endpoint == 'mod_users_list' %}active{% endif %}">
+                    <img src="{{ url_for('static', filename='img/icons/icon_teams_1781697697383.png') }}" class="link-icon w-5 h-5 object-contain" alt="">
+                    <span class="link-text">Пользователи</span>
+                </a>
+                <a href="{{ url_for('mod_logs') }}" 
+                   class="sidebar-link {% if request.endpoint == 'mod_logs' %}active{% endif %}">
+                    <img src="{{ url_for('static', filename='img/icons/icon_chat_1781697350821.png') }}" class="link-icon w-5 h-5 object-contain" alt="">
+                    <span class="link-text">Логи</span>
+                </a>
+            </nav>
+        </div>
+
+        {% if is_admin %}
+        <!-- АДМИНИСТРАЦИЯ -->
+        <div class="sidebar-section">
+            <h3 class="sidebar-title">
+                <img src="{{ url_for('static', filename='img/icons/icon_lock_1781697361964.png') }}" class="w-5 h-5 opacity-80" alt="">
+                Администрация
+            </h3>
+            <nav class="sidebar-nav">
+                <a href="{{ url_for('admin_moderators') }}" 
+                   class="sidebar-link {% if request.endpoint == 'admin_moderators' %}active{% endif %}">
+                    <img src="{{ url_for('static', filename='img/icons/icon_teams_1781697697383.png') }}" class="link-icon w-5 h-5 object-contain" alt="">
+                    <span class="link-text">Модераторы</span>
+                </a>
+                <a href="{{ url_for('admin_mangas') }}" 
+                   class="sidebar-link {% if request.endpoint == 'admin_mangas' %}active{% endif %}">
+                    <img src="{{ url_for('static', filename='img/icons/icon_library_1781697706908.png') }}" class="link-icon w-5 h-5 object-contain" alt="">
+                    <span class="link-text">Манга</span>
+                </a>
+                <a href="{{ url_for('admin_add_manga') }}" 
+                   class="sidebar-link {% if request.endpoint == 'admin_add_manga' %}active{% endif %}">
+                    <img src="{{ url_for('static', filename='img/icons/icon_create_1781697748838.png') }}" class="link-icon w-5 h-5 object-contain" alt="">
+                    <span class="link-text">Добавить мангу</span>
+                </a>
+                <a href="{{ url_for('admin_hero') }}" 
+                   class="sidebar-link {% if request.endpoint == 'admin_hero' %}active{% endif %}">
+                    <img src="{{ url_for('static', filename='img/icons/icon_frames_1781697759234.png') }}" class="link-icon w-5 h-5 object-contain" alt="">
+                    <span class="link-text">Hero-блоки</span>
+                </a>
+                <a href="{{ url_for('admin_team_applications') }}" 
+                   class="sidebar-link {% if request.endpoint == 'admin_team_applications' %}active{% endif %}">
+                    <img src="{{ url_for('static', filename='img/icons/icon_notification_1781697718986.png') }}" class="link-icon w-5 h-5 object-contain" alt="">
+                    <span class="link-text">Заявки команд</span>
+                    {% if pending_team_apps_count %}
+                        <span class="link-badge">{{ pending_team_apps_count }}</span>
+                    {% endif %}
+                </a>
+            </nav>
+        </div>
+        {% endif %}
+
+        <!-- БЫСТРЫЕ ССЫЛКИ -->
+        <div class="sidebar-section">
+            <h3 class="sidebar-title">
+                <img src="{{ url_for('static', filename='img/icons/icon_logout_1781697738264.png') }}" class="w-4 h-4 opacity-80" alt="">
+                Быстро
+            </h3>
+            <nav class="sidebar-nav">
+                <a href="{{ url_for('index') }}" class="sidebar-link">
+                    <img src="{{ url_for('static', filename='img/icons/icon_library_1781697706908.png') }}" class="link-icon w-5 h-5 object-contain" alt="">
+                    <span class="link-text">На сайт</span>
+                </a>
+                <a href="{{ url_for('forum') }}" class="sidebar-link">
+                    <img src="{{ url_for('static', filename='img/icons/icon_chat_1781697350821.png') }}" class="link-icon w-5 h-5 object-contain" alt="">
+                    <span class="link-text">Форум</span>
+                </a>
+            </nav>
+        </div>
+
+        <!-- Кнопка сворачивания -->
+        <button class="sidebar-toggle" onclick="toggleSidebar()" title="Свернуть/развернуть">
+            <svg id="toggleIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+        </button>
+    </div>
+</aside>
+
+<style>
+    /* ============ БОКОВАЯ ПАНЕЛЬ АДМИНА ============ */
+    .admin-sidebar {
+        position: fixed;
+        top: 88px;
+        left: 16px;
+        width: 280px;
+        height: calc(100vh - 104px);
+        background: rgba(15, 15, 35, 0.65);
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+        border: 1px solid rgba(139, 92, 246, 0.2);
+        border-radius: 24px;
+        z-index: 40;
+        transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), width 0.3s ease;
+        overflow: visible;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(255,255,255,0.05);
+    }
+
+    .admin-sidebar.collapsed {
+        transform: translateX(-280px);
+    }
+
+    .admin-sidebar.collapsed .sidebar-toggle #toggleIcon {
+        transform: rotate(180deg);
+    }
+
+    .admin-sidebar-inner {
+        padding: 24px 24px 24px 16px;
+        position: relative;
+        min-height: 100%;
+        height: 100%;
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+
+    /* Шапка */
+    .sidebar-header {
+        text-align: center;
+        padding-bottom: 20px;
+        border-bottom: 1px solid rgba(139, 92, 246, 0.2);
+        margin-bottom: 20px;
+        padding-top: 4px;
+    }
+
+    .sidebar-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 8px 18px;
+        border-radius: 20px;
+        font-weight: 700;
+        font-size: 12px;
+        letter-spacing: 1.5px;
+        margin-bottom: 12px;
+        white-space: nowrap;
+        max-width: 100%;
+    }
+
+    .admin-badge {
+        background: linear-gradient(135deg, #f59e0b, #ef4444);
+        color: white;
+        animation: pulseBadgeAdmin 3s infinite;
+    }
+
+    .mod-badge {
+        background: linear-gradient(135deg, #8b5cf6, #6366f1);
+        color: white;
+        animation: pulseBadge 3s infinite;
+    }
+
+    .badge-text { font-size: 12px; }
+
+    .sidebar-username {
+        color: #e5e7eb;
+        font-size: 14px;
+        font-weight: 500;
+        margin: 0;
+        word-break: break-word;
+        overflow-wrap: break-word;
+    }
+
+    .sidebar-section {
+        margin-bottom: 24px;
+    }
+
+    .sidebar-title {
+        color: #8b5cf6;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        margin: 0 0 12px 8px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .sidebar-nav {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .sidebar-link {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 11px 14px;
+        border-radius: 10px;
+        color: #9ca3af;
+        font-size: 14px;
+        font-weight: 500;
+        text-decoration: none;
+        transition: all 0.25s ease;
+        position: relative;
+        border: 1px solid transparent;
+    }
+
+    .sidebar-link:hover {
+        background: rgba(139, 92, 246, 0.15);
+        color: #e5e7eb;
+        border-color: rgba(139, 92, 246, 0.3);
+        transform: translateX(4px);
+    }
+
+    .sidebar-link.active {
+        background: linear-gradient(135deg, rgba(139, 92, 246, 0.4), rgba(99, 102, 241, 0.2));
+        color: #fff;
+        border-color: rgba(139, 92, 246, 0.5);
+        box-shadow: 0 8px 25px rgba(139, 92, 246, 0.2);
+    }
+
+    .sidebar-link.active::before {
+        content: '';
+        position: absolute;
+        left: -1px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 4px;
+        height: 60%;
+        background: linear-gradient(180deg, #a78bfa, #8b5cf6);
+        border-radius: 4px;
+        animation: neonGlow 2s infinite;
+    }
+
+    .sidebar-link:hover .link-icon {
+        transform: scale(1.15) rotate(-5deg);
+        filter: brightness(1.2);
+    }
+
+    .link-icon {
+        flex-shrink: 0;
+        transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), filter 0.3s;
+    }
+
+    .link-text {
+        flex: 1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .link-badge {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        color: white;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 2px 7px;
+        border-radius: 10px;
+        min-width: 20px;
+        text-align: center;
+        box-shadow: 0 2px 8px rgba(239, 68, 68, 0.5);
+    }
+
+    /* Кнопка сворачивания */
+    .sidebar-toggle {
+        position: absolute;
+        top: 32px;
+        right: -16px;
+        width: 32px;
+        height: 32px;
+        background: linear-gradient(135deg, #8b5cf6, #6366f1);
+        border: 2px solid rgba(255,255,255,0.1);
+        border-radius: 50%;
+        color: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        z-index: 100;
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        box-shadow: 0 4px 12px rgba(139, 92, 246, 0.5);
+        animation: pulseBadge 4s infinite;
+    }
+
+    .sidebar-toggle:hover {
+        transform: scale(1.15);
+        box-shadow: 0 4px 20px rgba(139, 92, 246, 0.8);
+    }
+
+    .sidebar-toggle #toggleIcon {
+        transition: transform 0.3s;
+    }
+
+    /* Скроллбар */
+    .admin-sidebar-inner::-webkit-scrollbar { width: 6px; }
+    .admin-sidebar-inner::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); }
+    .admin-sidebar-inner::-webkit-scrollbar-thumb {
+        background: rgba(139, 92, 246, 0.5);
+        border-radius: 3px;
+    }
+    .admin-sidebar-inner::-webkit-scrollbar-thumb:hover {
+        background: rgba(139, 92, 246, 0.8);
+    }
+
+    /* Контент */
+    .admin-content-wrapper {
+        margin-left: 312px;
+        transition: margin-left 0.4s cubic-bezier(0.175, 0.885, 0.32, 1);
+        padding: 24px;
+        min-height: calc(100vh - 80px);
+    }
+
+    .admin-content-wrapper.collapsed {
+        margin-left: 16px;
+    }
+
+    /* Анимации сайдбара */
+    @keyframes pulseBadge {
+        0%, 100% { box-shadow: 0 4px 16px rgba(139, 92, 246, 0.4); }
+        50% { box-shadow: 0 4px 25px rgba(139, 92, 246, 0.8), inset 0 0 8px rgba(255,255,255,0.2); }
+    }
+    
+    @keyframes pulseBadgeAdmin {
+        0%, 100% { box-shadow: 0 4px 16px rgba(239, 68, 68, 0.4); }
+        50% { box-shadow: 0 4px 25px rgba(239, 68, 68, 0.8), inset 0 0 8px rgba(255,255,255,0.2); }
+    }
+
+    @keyframes neonGlow {
+        0%, 100% { box-shadow: 0 0 10px rgba(167, 139, 250, 0.6); }
+        50% { box-shadow: 0 0 20px rgba(167, 139, 250, 1), 0 0 30px rgba(139, 92, 246, 0.6); }
+    }
+
+    /* Мобильная адаптация */
+    @media (max-width: 768px) {
+        .admin-sidebar {
+            transform: translateX(-100%);
+            top: 72px;
+            left: 8px;
+            height: calc(100vh - 80px);
+            width: calc(100% - 16px);
+        }
+        .admin-sidebar.mobile-open {
+            transform: translateX(0);
+        }
+        .admin-content-wrapper {
+            margin-left: 0;
+            padding: 12px;
+        }
+        .admin-content-wrapper.collapsed {
+            margin-left: 0;
+        }
+    }
+</style>
+
+<script>
+    function toggleSidebar() {
+        const sidebar = document.querySelector('.admin-sidebar');
+        const wrapper = document.querySelector('.admin-content-wrapper');
+        sidebar.classList.toggle('collapsed');
+        if (wrapper) wrapper.classList.toggle('collapsed');
+        localStorage.setItem('adminSidebarCollapsed', sidebar.classList.contains('collapsed'));
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        if (localStorage.getItem('adminSidebarCollapsed') === 'true') {
+            document.querySelector('.admin-sidebar')?.classList.add('collapsed');
+            document.querySelector('.admin-content-wrapper')?.classList.add('collapsed');
+        }
+    });
+</script>

@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}Логи модерации{% endblock %}
+
+{% block content %}
+{% include '_sidebar_admin.html' %}
+
+<div class="admin-content-wrapper">
+    <div class="max-w-6xl mx-auto">
+        <div class="flex items-center justify-between mb-6 flex-wrap gap-4">
+            <h1 class="text-3xl font-bold text-white">📋 Логи модерации</h1>
+        </div>
+
+        <div class="bg-gray-900/50 border border-gray-800 rounded-2xl overflow-hidden overflow-x-auto">
+            <table class="w-full min-w-[700px]">
+                <thead class="bg-gray-800/60">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-gray-400 text-sm">Дата</th>
+                        <th class="px-4 py-3 text-left text-gray-400 text-sm">Модератор</th>
+                        <th class="px-4 py-3 text-left text-gray-400 text-sm">Действие</th>
+                        <th class="px-4 py-3 text-left text-gray-400 text-sm">Цель</th>
+                        <th class="px-4 py-3 text-left text-gray-400 text-sm">Причина</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs.items %}
+                    <tr class="border-t border-gray-800 hover:bg-gray-800/30">
+                        <td class="px-4 py-3 text-gray-400 text-sm whitespace-nowrap">
+                            {{ log.created_at.strftime('%d.%m.%Y %H:%M') }}
+                        </td>
+                        <td class="px-4 py-3">
+                            <a href="{{ url_for('profile', username=log.moderator.username) }}" 
+                               class="text-purple-400 hover:text-purple-300 font-medium">
+                                {{ log.moderator.username }}
+                            </a>
+                        </td>
+                        <td class="px-4 py-3">
+                            <span class="bg-yellow-900/30 text-yellow-400 px-2 py-1 rounded text-xs font-mono">
+                                {{ log.action }}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 text-gray-400 text-sm">
+                            {% if log.target_type %}{{ log.target_type }} #{{ log.target_id }}{% endif %}
+                        </td>
+                        <td class="px-4 py-3 text-gray-300 text-sm">{{ log.reason or '—' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if logs.pages > 1 %}
+        <div class="flex justify-center gap-2 mt-6 flex-wrap">
+            {% for page_num in logs.iter_pages() %}
+                {% if page_num %}
+                    <a href="{{ url_for('mod_logs', page=page_num) }}"
+                       class="px-3 py-2 rounded {% if page_num == logs.page %}bg-purple-600 text-white{% else %}bg-gray-800 text-gray-400 hover:bg-gray-700{% endif %}">
+                        {{ page_num }}
+                    </a>
+                {% else %}
+                    <span class="px-2 py-2 text-gray-500">...</span>
+                {% endif %}
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -81,13 +81,24 @@
 
                 <div class="border-t border-borderDark my-6"></div>
 
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-6">
+                <div class="grid grid-cols-2 md:grid-cols-5 gap-6 mb-6">
                     <div>
                         <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">Рейтинг</p>
-                        <div class="flex items-center gap-2">
-                            <svg class="w-5 h-5 text-amber-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-                            <span class="text-2xl font-bold text-white">{{ "%.1f"|format(manga.rating|float) if manga.rating else "—" }}</span>
+                        <div class="flex flex-col gap-1">
+                            <div class="flex items-center gap-2">
+                                <svg class="w-5 h-5 text-amber-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                                <span class="text-2xl font-bold text-white" id="avgRatingValue">{{ "%.1f"|format(manga.rating|float) if manga.rating else "—" }}</span>
+                            </div>
+                            <span class="text-xs text-gray-500"><span id="ratingCountValue">{{ manga.rating_count or 0 }}</span> оценок</span>
                         </div>
+                    </div>
+
+                    <div>
+                        <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">Просмотры</p>
+                        <p class="text-2xl font-bold text-white flex items-center gap-2">
+                            <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                            {{ manga.views or 0 }}
+                        </p>
                     </div>
 
                     <div>
@@ -112,6 +123,24 @@
                         </p>
                     </div>
                 </div>
+
+                {% if current_user.is_authenticated %}
+                <div class="mb-6 p-4 bg-darkBg border border-borderDark rounded-xl flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-300 font-medium mb-1">Твоя оценка</p>
+                        <div class="flex items-center gap-1" id="starRatingContainer">
+                            {% for i in range(1, 11) %}
+                            <button type="button" data-score="{{ i }}" class="star-btn p-0 focus:outline-none transition-transform hover:scale-110">
+                                <svg class="w-6 h-6 {% if user_rating and i <= user_rating %}text-amber-400{% else %}text-gray-600 hover:text-amber-400/50{% endif %}" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                </svg>
+                            </button>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div id="ratingSavedIndicator" class="text-emerald-400 text-sm font-bold opacity-0 transition-opacity">Сохранено!</div>
+                </div>
+                {% endif %}
 
                 <!-- ============ КНОПКА ЧИТАТЬ ============ -->
                 {% if chapters and chapters|length > 0 %}
@@ -663,6 +692,68 @@
         quickCoverInput.addEventListener('change', e => handleUpload(e.target.files[0]));
     }
     {% endif %}
+
+    // ============ СИСТЕМА ОЦЕНОК ============
+    const starContainer = document.getElementById('starRatingContainer');
+    if (starContainer) {
+        const stars = starContainer.querySelectorAll('.star-btn');
+        let currentRating = parseInt("{{ user_rating or 0 }}");
+
+        function updateStars(score, hover = false) {
+            stars.forEach(star => {
+                const starScore = parseInt(star.dataset.score);
+                const svg = star.querySelector('svg');
+                if (starScore <= score) {
+                    svg.classList.remove('text-gray-600', 'hover:text-amber-400/50');
+                    svg.classList.add('text-amber-400');
+                    if (hover) svg.classList.add('opacity-70');
+                    else svg.classList.remove('opacity-70');
+                } else {
+                    svg.classList.remove('text-amber-400', 'opacity-70');
+                    svg.classList.add('text-gray-600');
+                }
+            });
+        }
+
+        stars.forEach(star => {
+            star.addEventListener('mouseenter', () => updateStars(parseInt(star.dataset.score), true));
+            star.addEventListener('mouseleave', () => updateStars(currentRating));
+            
+            star.addEventListener('click', () => {
+                const score = parseInt(star.dataset.score);
+                
+                fetch('{{ url_for("rate_manga", manga_id=manga.id) }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({score: score})
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        currentRating = score;
+                        updateStars(currentRating);
+                        
+                        document.getElementById('avgRatingValue').textContent = data.new_rating.toFixed(1);
+                        document.getElementById('ratingCountValue').textContent = data.rating_count;
+                        
+                        const indicator = document.getElementById('ratingSavedIndicator');
+                        indicator.classList.remove('opacity-0');
+                        setTimeout(() => indicator.classList.add('opacity-0'), 2000);
+                    } else {
+                        alert('Ошибка: ' + (data.error || 'Неизвестная ошибка'));
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert('Ошибка сети при сохранении оценки');
+                });
+            });
+        });
+    }
+
 })();
 </script>
 

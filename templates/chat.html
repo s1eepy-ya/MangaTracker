@@ -1,0 +1,385 @@
+{% extends "base.html" %}
+
+{% block title %}Чат | MangaTracker{% endblock %}
+
+{% block content %}
+<!-- Фоновые эффекты -->
+<div class="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
+    <div class="absolute top-[10%] left-[20%] w-[500px] h-[500px] bg-indigo-600/10 rounded-full blur-[150px]"></div>
+    <div class="absolute bottom-[10%] right-[20%] w-[400px] h-[400px] bg-cyan-600/10 rounded-full blur-[150px]"></div>
+</div>
+
+<div class="container mx-auto px-4 py-8 max-w-6xl">
+    <div class="bg-cardBg/80 backdrop-blur-xl border border-borderDark rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row h-[80vh] min-h-[600px]">
+        
+        <!-- ============ САЙДБАР ЧАТОВ ============ -->
+        <div class="w-full md:w-80 bg-darkBg/50 border-r border-borderDark flex flex-col">
+            <div class="p-6 border-b border-borderDark/50 flex items-center gap-3">
+                <img src="{{ url_for('static', filename='img/icons/icon_chat.png') }}" class="w-8 h-8 drop-shadow-[0_0_10px_rgba(6,182,212,0.6)]" alt="Chat">
+                <h3 class="text-xl font-black font-display text-white">Общение</h3>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
+                <!-- Комната 1 -->
+                <div class="chat-room-item active group relative px-4 py-3 rounded-2xl cursor-pointer transition-all bg-gradient-to-r from-indigo-600/20 to-cyan-600/20 border border-cyan-500/30 overflow-hidden" data-room="{{ general.id }}">
+                    <div class="absolute inset-0 bg-gradient-to-r from-indigo-500/20 to-cyan-500/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <div class="relative z-10 flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-cyan-500 flex items-center justify-center flex-shrink-0 shadow-lg shadow-cyan-500/30">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"/></svg>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <h4 class="text-white font-bold truncate">Общий чат</h4>
+                            <p class="text-xs text-cyan-300 truncate">Главное лобби</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Комната Модераторов -->
+                {% if mod_room %}
+                <div class="chat-room-item group relative px-4 py-3 rounded-2xl cursor-pointer transition-all hover:bg-cardBg border border-transparent hover:border-pink-500/30 overflow-hidden" data-room="{{ mod_room.id }}">
+                    <div class="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-pink-500/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <div class="relative z-10 flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0 shadow-lg shadow-pink-500/20">
+                            <img src="{{ url_for('static', filename='img/icons/icon_admin.png') }}" class="w-5 h-5" alt="Mod">
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <h4 class="text-gray-300 group-hover:text-white font-bold truncate transition-colors">Чат стаффа</h4>
+                            <p class="text-xs text-gray-500 truncate">Только для админов</p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- ============ ОСНОВНОЕ ОКНО ЧАТА ============ -->
+        <div class="flex-1 flex flex-col bg-cardBg/30 relative">
+            
+            <!-- Хедер чата -->
+            <div class="h-16 px-6 border-b border-borderDark/50 flex items-center justify-between bg-darkBg/30 backdrop-blur-md">
+                <div class="flex items-center gap-3">
+                    <span class="relative flex h-3 w-3">
+                      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                    </span>
+                    <span class="text-white font-bold" id="currentRoomName">Общий чат</span>
+                </div>
+                <div class="text-xs text-gray-500 bg-darkBg px-3 py-1.5 rounded-lg border border-borderDark/50">
+                    Правила: без спама
+                </div>
+            </div>
+
+            <!-- Область сообщений -->
+            <div class="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 custom-scrollbar" id="messages">
+                <!-- Сообщения будут загружены сюда -->
+                <div class="flex justify-center items-center h-full">
+                    <div class="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-cyan-500"></div>
+                </div>
+            </div>
+
+            <!-- Статус бар -->
+            <div id="chatStatus" class="px-6 py-1 text-xs font-semibold text-rose-400 min-h-[20px] empty:hidden"></div>
+
+            <!-- Ввод сообщения -->
+            <div class="p-4 bg-darkBg/60 backdrop-blur-md border-t border-borderDark/50">
+                <div class="flex items-end gap-2 bg-cardBg rounded-2xl border border-borderDark focus-within:border-cyan-500/50 focus-within:ring-1 focus-within:ring-cyan-500/50 p-2 transition-all">
+                    <textarea id="msgInput" 
+                              rows="1" 
+                              placeholder="Напишите сообщение..." 
+                              maxlength="500"
+                              class="flex-1 bg-transparent text-white placeholder-gray-500 resize-none px-3 py-2 focus:outline-none max-h-32 min-h-[44px] scrollbar-hide"></textarea>
+                    
+                    <button id="stickerToggleBtn" class="w-11 h-11 rounded-xl bg-darkBg hover:bg-cardBg border border-borderDark text-pink-400 flex items-center justify-center flex-shrink-0 transition-transform hover:scale-105 shadow-inner" title="Стикеры">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    </button>
+                    
+                    <button id="sendBtn" class="w-11 h-11 rounded-xl bg-gradient-to-br from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 text-white flex items-center justify-center flex-shrink-0 transition-transform hover:scale-105 shadow-lg shadow-cyan-500/20 disabled:opacity-50 disabled:hover:scale-100">
+                        <svg class="w-5 h-5 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+                    </button>
+                </div>
+            </div>
+            
+        </div>
+        
+        <!-- Панель стикеров -->
+        <div id="stickersPanel" class="hidden absolute bottom-[80px] right-8 w-72 bg-cardBg/95 backdrop-blur-xl border border-pink-500/30 rounded-2xl shadow-2xl p-4 z-50">
+            <h4 class="text-xs font-bold text-pink-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
+                Мои стикеры
+            </h4>
+            <div id="stickersGrid" class="grid grid-cols-3 gap-3 max-h-56 overflow-y-auto custom-scrollbar">
+                <div class="col-span-3 text-center text-gray-500 text-xs py-4">Загрузка...</div>
+            </div>
+        </div>
+        
+        <!-- ============ УЧАСТНИКИ ============ -->
+        <div class="hidden lg:flex w-64 bg-darkBg/50 border-l border-borderDark flex-col">
+            <div class="h-16 px-6 border-b border-borderDark/50 flex items-center bg-darkBg/30 backdrop-blur-md">
+                <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                    <svg class="w-4 h-4 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                    В сети
+                </h3>
+            </div>
+            <div class="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar" id="participantsList">
+                <!-- Participants will be loaded here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Кастомный скроллбар для чата */
+.custom-scrollbar::-webkit-scrollbar { width: 6px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+
+/* Стили сообщений */
+.chat-msg { display: flex; gap: 12px; animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+@keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+.chat-msg-avatar { width: 40px; height: 40px; border-radius: 12px; object-fit: cover; flex-shrink: 0; }
+.chat-msg-content { max-width: 80%; }
+.chat-msg-header { display: flex; items-center; gap: 8px; margin-bottom: 4px; }
+.chat-msg-user { font-size: 13px; font-weight: 700; color: #a5b4fc; }
+.chat-msg-time { font-size: 10px; color: #6b7280; }
+.chat-msg-bubble { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.05); padding: 10px 14px; border-radius: 4px 16px 16px 16px; color: #e5e7eb; font-size: 14px; line-height: 1.5; word-break: break-word; }
+
+/* Системные/Бот сообщения */
+.chat-msg-bot .chat-msg-user { color: #f59e0b; }
+.chat-msg-bot .chat-msg-bubble { background: rgba(245,158,11,0.1); border-color: rgba(245,158,11,0.2); border-left: 3px solid #f59e0b; border-radius: 8px 16px 16px 8px; }
+
+/* Мои сообщения */
+.chat-msg-self { flex-direction: row-reverse; }
+.chat-msg-self .chat-msg-header { justify-content: flex-end; }
+.chat-msg-self .chat-msg-bubble { background: rgba(99,102,241,0.2); border-color: rgba(99,102,241,0.3); border-radius: 16px 4px 16px 16px; }
+</style>
+
+<script>
+let currentRoom = {{ general.id }};
+const currentUsername = "{{ current_user.username if current_user.is_authenticated else '' }}";
+
+async function loadMessages() {
+    const res = await fetch(`/chat/api/messages/${currentRoom}`);
+    if (!res.ok) return;
+    const msgs = await res.json();
+    const container = document.getElementById('messages');
+    
+    // Если контейнер был с лоадером, очищаем
+    if (container.querySelector('.animate-spin')) container.innerHTML = '';
+    
+    // Сравниваем кол-во (простое обновление, лучше использовать ID последнего сообщения)
+    const currentCount = container.children.length;
+    
+    const participants = {};
+    let shouldScroll = false;
+    
+    if (currentCount !== msgs.length) {
+        container.innerHTML = '';
+        msgs.forEach(m => {
+            const isSelf = m.username === currentUsername;
+            const div = document.createElement('div');
+            div.className = `chat-msg ${m.is_bot ? 'chat-msg-bot' : ''} ${isSelf ? 'chat-msg-self' : ''}`;
+            
+            let contentHtml = escapeHtml(m.content);
+            let isSticker = false;
+            const stickerMatch = m.content.match(/^\[sticker:(.+)\]$/);
+            if (stickerMatch) {
+                isSticker = true;
+                contentHtml = `<img src="${stickerMatch[1]}" class="w-32 h-32 object-contain drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]" alt="Стикер">`;
+            }
+            
+            div.innerHTML = `
+                <img src="${m.avatar}" class="chat-msg-avatar" alt="">
+                <div class="chat-msg-content">
+                    <div class="chat-msg-header">
+                        <span class="chat-msg-user">${m.username}</span>
+                        <span class="chat-msg-time">${m.time}</span>
+                    </div>
+                    <div class="chat-msg-bubble ${isSticker ? 'bg-transparent border-0 p-0 shadow-none' : ''}">${contentHtml}</div>
+                </div>
+            `;
+            container.appendChild(div);
+            
+            if (!m.is_bot) {
+                participants[m.user_id] = {
+                    username: m.username,
+                    avatar: m.avatar,
+                    role: m.role
+                };
+            }
+        });
+        shouldScroll = true;
+    } else {
+        // Just extract participants if no new messages to keep list updated
+        msgs.forEach(m => {
+            if (!m.is_bot) {
+                participants[m.user_id] = {
+                    username: m.username,
+                    avatar: m.avatar,
+                    role: m.role
+                };
+            }
+        });
+    }
+
+    renderParticipants(Object.values(participants));
+    if (shouldScroll) {
+        container.scrollTop = container.scrollHeight;
+    }
+}
+
+function renderParticipants(users) {
+    const list = document.getElementById('participantsList');
+    if (!list) return;
+    list.innerHTML = '';
+    
+    if (users.length === 0) {
+        list.innerHTML = '<div class="text-xs text-gray-500 text-center mt-4">Пусто</div>';
+        return;
+    }
+    
+    users.forEach(u => {
+        const div = document.createElement('div');
+        div.className = 'flex items-center gap-3 p-2 rounded-xl hover:bg-white/5 transition';
+        
+        let roleBadge = '';
+        if (u.role === 'ADMIN' || u.role === 'MODERATOR') {
+            roleBadge = '<span class="w-2 h-2 rounded-full bg-pink-500 shadow-[0_0_5px_rgba(236,72,153,0.8)]"></span>';
+        } else {
+            roleBadge = '<span class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.8)]"></span>';
+        }
+        
+        div.innerHTML = `
+            <div class="relative">
+                <img src="${u.avatar}" class="w-8 h-8 rounded-lg object-cover" alt="">
+                <div class="absolute -bottom-1 -right-1">${roleBadge}</div>
+            </div>
+            <span class="text-sm font-semibold text-gray-300 truncate">${u.username}</span>
+        `;
+        list.appendChild(div);
+    });
+}
+
+
+function escapeHtml(s) {
+    return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+async function sendMessage() {
+    const input = document.getElementById('msgInput');
+    const btn = document.getElementById('sendBtn');
+    const text = input.value.trim();
+    if (!text) return;
+    
+    btn.disabled = true;
+    const res = await fetch(`/chat/api/send/${currentRoom}`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({content: text})
+    });
+    
+    const status = document.getElementById('chatStatus');
+    if (!res.ok) {
+        const data = await res.json();
+        status.textContent = data.error || 'Ошибка отправки';
+        setTimeout(() => status.textContent = '', 5000);
+    } else {
+        input.value = '';
+        input.style.height = 'auto'; // сброс высоты
+        status.textContent = '';
+        await loadMessages();
+    }
+    btn.disabled = false;
+    input.focus();
+}
+
+// Авторасширение textarea
+const msgInput = document.getElementById('msgInput');
+msgInput.addEventListener('input', function() {
+    this.style.height = 'auto';
+    this.style.height = (this.scrollHeight) + 'px';
+});
+
+document.getElementById('sendBtn').onclick = sendMessage;
+msgInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+    }
+});
+
+// Переключение комнат
+document.querySelectorAll('.chat-room-item').forEach(el => {
+    el.onclick = () => {
+        // Убираем активный стиль у всех
+        document.querySelectorAll('.chat-room-item').forEach(x => {
+            x.classList.remove('active', 'bg-gradient-to-r', 'from-indigo-600/20', 'to-cyan-600/20', 'border-cyan-500/30');
+            x.classList.add('border-transparent');
+            x.querySelector('h4').classList.remove('text-white');
+            x.querySelector('h4').classList.add('text-gray-300');
+        });
+        
+        // Ставим активный стиль текущему
+        el.classList.add('active', 'bg-gradient-to-r', 'from-indigo-600/20', 'to-cyan-600/20', 'border-cyan-500/30');
+        el.classList.remove('border-transparent');
+        el.querySelector('h4').classList.add('text-white');
+        el.querySelector('h4').classList.remove('text-gray-300');
+        
+        currentRoom = parseInt(el.dataset.room);
+        document.getElementById('currentRoomName').textContent = el.querySelector('h4').textContent;
+        
+        document.getElementById('messages').innerHTML = '<div class="flex justify-center items-center h-full"><div class="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-cyan-500"></div></div>';
+        loadMessages();
+    };
+});
+
+// Загрузка стикеров
+const stickersPanel = document.getElementById('stickersPanel');
+const stickerToggleBtn = document.getElementById('stickerToggleBtn');
+const stickersGrid = document.getElementById('stickersGrid');
+let stickersLoaded = false;
+
+stickerToggleBtn.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    stickersPanel.classList.toggle('hidden');
+    if (!stickersPanel.classList.contains('hidden') && !stickersLoaded) {
+        const res = await fetch('/api/my_stickers');
+        if (res.ok) {
+            const data = await res.json();
+            if (data.length === 0) {
+                stickersGrid.innerHTML = '<div class="col-span-3 text-center text-gray-500 text-xs py-4">У вас пока нет стикеров.<br>Зарегистрируйтесь, чтобы получить подарок!</div>';
+            } else {
+                stickersGrid.innerHTML = data.map(s => `
+                    <div class="cursor-pointer hover:scale-110 transition-transform p-1 hover:bg-white/5 rounded-xl flex items-center justify-center" onclick="sendSticker('${s.image_path}')">
+                        <img src="${s.image_path}" class="w-16 h-16 object-contain" alt="${s.name}" title="${s.name}">
+                    </div>
+                `).join('');
+            }
+            stickersLoaded = true;
+        }
+    }
+});
+
+// Закрывать панель стикеров при клике вне её
+document.addEventListener('click', (e) => {
+    if (!stickersPanel.contains(e.target) && !stickerToggleBtn.contains(e.target)) {
+        stickersPanel.classList.add('hidden');
+    }
+});
+
+async function sendSticker(imagePath) {
+    stickersPanel.classList.add('hidden');
+    const res = await fetch(`/chat/api/send/${currentRoom}`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({content: `[sticker:${imagePath}]`})
+    });
+    if (res.ok) await loadMessages();
+}
+
+loadMessages();
+setInterval(loadMessages, 3000);
+</script>
+{% endblock %}
